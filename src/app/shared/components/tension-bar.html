@@ -1,0 +1,8 @@
+<div class="tension-wrap" [class.tension-wrap--compact]="compact()">
+  <div class="tension-track">
+    <div class="tension-fill" [class]="colorClass()" [style.width.%]="pct()"></div>
+  </div>
+  @if (showLabel()) {
+    <span class="tension-label">{{ pct() }}%</span>
+  }
+</div>

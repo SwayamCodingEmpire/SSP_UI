@@ -1,0 +1,66 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()">
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-mark">◈</div>
+    @if (!collapsed()) {
+      <div class="logo-text">
+        <span class="logo-name">SSP</span>
+        <span class="logo-tagline">Story Studio</span>
+      </div>
+    }
+    <button class="collapse-btn" (click)="toggle()" [title]="collapsed() ? 'Expand' : 'Collapse'">
+      <i [class]="collapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"></i>
+    </button>
+  </div>
+
+  <!-- Main nav -->
+  <nav class="sidebar-nav" aria-label="Main navigation">
+    <ul class="nav-list">
+      @for (item of mainNav; track item.label) {
+        <li>
+          <a class="nav-item"
+             [routerLink]="item.route"
+             routerLinkActive="nav-item--active"
+             [routerLinkActiveOptions]="{ exact: item.route === '/' }">
+            <i [class]="item.icon"></i>
+            @if (!collapsed()) {
+              <span>{{ item.label }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <!-- Project-scoped nav (shown when inside a project) -->
+  @if (projectNav().length) {
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      @if (!collapsed()) {
+        <p class="section-label">This Project</p>
+      }
+      <ul class="nav-list">
+        @for (item of projectNav(); track item.label) {
+          <li>
+            <a class="nav-item"
+               [routerLink]="item.route"
+               routerLinkActive="nav-item--active">
+              <i [class]="item.icon"></i>
+              @if (!collapsed()) {
+                <span>{{ item.label }}</span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- New project CTA -->
+  <div class="sidebar-footer">
+    <a class="new-project-btn" routerLink="/projects/new" [class.new-project-btn--icon]="collapsed()">
+      <i class="pi pi-plus"></i>
+      @if (!collapsed()) { <span>New Project</span> }
+    </a>
+  </div>
+</aside>

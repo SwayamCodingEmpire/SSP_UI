@@ -1,0 +1,36 @@
+@use 'styles/mixins' as *;
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+
+  // Desktop: sidebar is visible inline
+  @include desktop {
+    min-height: 100dvh;
+  }
+}
+
+// Desktop sidebar — visible inline on large screens only
+.app-sidebar--desktop {
+  @media (max-width: 1023px) { display: none; }
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-8) var(--sp-8);
+  overflow-x: hidden;
+
+  @include tablet {
+    padding: var(--sp-6);
+    // Topbar takes space on tablet/mobile
+    padding-top: calc(var(--topbar-h) + var(--sp-6));
+  }
+
+  @include mobile {
+    padding: var(--sp-4);
+    padding-top: calc(var(--topbar-h) + var(--sp-4));
+    // Bottom nav takes space on mobile
+    padding-bottom: calc(var(--bottom-nav-h) + var(--sp-4));
+  }
+}

@@ -1,0 +1,126 @@
+// ============================================================
+// Responsive Breakpoint Mixins
+// Usage: @include mobile { ... }  /  @include tablet { ... }
+// ============================================================
+
+$bp-sm:  480px;   // large phones
+$bp-md:  768px;   // tablets
+$bp-lg:  1024px;  // small laptops
+$bp-xl:  1280px;  // desktops
+
+@mixin mobile {
+  @media (max-width: #{$bp-md - 1px}) { @content; }
+}
+
+@mixin tablet {
+  @media (min-width: #{$bp-md}) and (max-width: #{$bp-lg - 1px}) { @content; }
+}
+
+@mixin tablet-up {
+  @media (min-width: #{$bp-md}) { @content; }
+}
+
+@mixin desktop {
+  @media (min-width: #{$bp-lg}) { @content; }
+}
+
+@mixin desktop-xl {
+  @media (min-width: #{$bp-xl}) { @content; }
+}
+
+@mixin small-phone {
+  @media (max-width: #{$bp-sm}) { @content; }
+}
+
+// Touch device detection
+@mixin touch {
+  @media (hover: none) and (pointer: coarse) { @content; }
+}
+
+// ── Utility Mixins ─────────────────────────────────────────
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin line-clamp($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@mixin glass {
+  background: rgba(26, 34, 53, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@mixin amber-underline {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--amber);
+    transition: width var(--t-normal);
+  }
+  &:hover::after { width: 100%; }
+}
+
+@mixin card-base {
+  background: var(--ink-700);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--t-normal), box-shadow var(--t-normal), transform var(--t-spring);
+}
+
+@mixin card-hover {
+  &:hover {
+    border-color: var(--amber-border);
+    box-shadow: var(--shadow-amber);
+    transform: translateY(-2px);
+  }
+}
+
+@mixin scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-400) transparent;
+  &::-webkit-scrollbar { width: 4px; height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: var(--ink-400);
+    border-radius: var(--radius-full);
+  }
+  &::-webkit-scrollbar-thumb:hover { background: var(--mist); }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+// ── Page Transition ────────────────────────────────────────
+@mixin page-enter {
+  animation: pageEnter var(--t-page) var(--ease-out) both;
+}

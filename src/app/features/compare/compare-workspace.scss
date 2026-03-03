@@ -1,0 +1,349 @@
+@use 'styles/mixins' as *;
+
+// ── Page shell — fills the main content area ────────────
+.cmp-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--sp-8) * 2);
+  gap: 0;
+  overflow: hidden;
+
+  @include tablet {
+    height: calc(100vh - var(--topbar-h) - var(--sp-6) * 2);
+  }
+}
+
+// ── Toolbar ─────────────────────────────────────────────
+.cmp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--ink-800);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.cmp-toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.cmp-brand-icon {
+  color: var(--amber);
+  font-size: 1rem;
+}
+
+.cmp-brand-label {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--parchment);
+  letter-spacing: var(--tracking-tight);
+}
+
+.cmp-selector-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-selector-arrow {
+  color: var(--dust);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+// Compare toolbar selects — sizing overrides only
+:host ::ng-deep .cmp-select .p-select {
+  min-width: 160px;
+  max-width: 220px;
+  border-color: var(--border-subtle);
+}
+
+// ── Panel toggles ───────────────────────────────────────
+.cmp-panel-toggles {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.cmp-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px var(--sp-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--dust);
+
+  i { font-size: 0.8rem; }
+
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  &:not(:disabled):hover { color: var(--mist); border-color: var(--border-default); }
+
+  // Source — amber
+  &--source.cmp-toggle--on {
+    background: var(--amber-dim);
+    border-color: var(--amber-border);
+    color: var(--amber);
+  }
+
+  // AI Draft — slate blue
+  &--ai.cmp-toggle--on {
+    background: var(--slate-dim);
+    border-color: var(--slate-border);
+    color: var(--slate-blue);
+  }
+
+  // Your Version — sage
+  &--user.cmp-toggle--on {
+    background: var(--sage-dim);
+    border-color: var(--sage-border);
+    color: var(--sage);
+  }
+}
+
+// ── Panels container ────────────────────────────────────
+.cmp-panels {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-subtle);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
+  background: var(--ink-900);
+
+  // Freeze text selection during drag
+  &--resizing {
+    cursor: col-resize;
+    user-select: none;
+
+    * { cursor: col-resize; }
+  }
+}
+
+// ── Individual panel ────────────────────────────────────
+.cmp-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-width: 10%;
+  overflow: hidden;
+  background: var(--ink-700);
+  transition: flex-basis 0ms; // instant during drag, remove spring
+
+  // Source — amber top bar
+  &--source { border-top: 3px solid var(--amber-border); }
+
+  // AI Draft — slate-blue top bar
+  &--ai { border-top: 3px solid var(--slate-border); }
+
+  // Your Version — sage top bar
+  &--user { border-top: 3px solid var(--sage-border); }
+}
+
+// Panel header
+.cmp-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-faint);
+  flex-shrink: 0;
+  background: var(--ink-800);
+
+  &--source { background: color-mix(in srgb, var(--ink-800) 90%, var(--amber) 4%); }
+  &--ai     { background: color-mix(in srgb, var(--ink-800) 90%, var(--slate-blue) 5%); }
+  &--user   { background: color-mix(in srgb, var(--ink-800) 90%, var(--sage) 4%); }
+}
+
+.cmp-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cmp-panel-icon {
+  font-size: 0.8rem;
+  opacity: 0.7;
+
+  .cmp-panel--source & { color: var(--amber); }
+  .cmp-panel--ai     & { color: var(--slate-blue); }
+  .cmp-panel--user   & { color: var(--sage); }
+}
+
+.cmp-panel-title {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--parchment);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.cmp-panel-tag {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-full);
+
+  &--source {
+    background: var(--amber-dim);
+    border: 1px solid var(--amber-border);
+    color: var(--amber);
+  }
+
+  &--ai {
+    background: var(--slate-dim);
+    border: 1px solid var(--slate-border);
+    color: var(--slate-blue);
+  }
+
+  &--user {
+    background: var(--sage-dim);
+    border: 1px solid var(--sage-border);
+    color: var(--sage);
+  }
+}
+
+// Panel scrollable body
+.cmp-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-5) var(--sp-5);
+  @include scrollbar-thin;
+  min-height: 0;
+}
+
+// ── Text rendering ──────────────────────────────────────
+.cmp-text {
+  font-size: var(--text-base);
+  line-height: var(--leading-loose);
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  &--source {
+    font-family: var(--font-original);
+    color: var(--parchment);
+  }
+
+  &--ai {
+    font-family: var(--font-reading);
+    color: var(--parchment-dim);
+    font-style: italic;
+  }
+
+  &--user {
+    font-family: var(--font-reading);
+    color: var(--parchment);
+  }
+}
+
+// ── Empty state ─────────────────────────────────────────
+.cmp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-10) var(--sp-4);
+  text-align: center;
+
+  p {
+    font-size: var(--text-sm);
+    color: var(--dust);
+    max-width: 200px;
+    line-height: var(--leading-relaxed);
+  }
+}
+
+.cmp-empty-icon {
+  font-size: 1.5rem;
+  color: var(--border-default);
+  opacity: 0.5;
+}
+
+// "No revision yet" notice above user text
+.cmp-no-revision {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--slate-dim);
+  border: 1px solid var(--slate-border);
+  color: var(--slate-blue);
+  font-size: var(--text-xs);
+  font-style: italic;
+
+  i { font-size: 0.75rem; }
+}
+
+// ── Drag divider ────────────────────────────────────────
+.cmp-divider {
+  width: 5px;
+  flex-shrink: 0;
+  background: var(--ink-900);
+  border-left: 1px solid var(--border-faint);
+  border-right: 1px solid var(--border-faint);
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast), width var(--t-fast);
+
+  &:hover,
+  .cmp-panels--resizing & {
+    width: 7px;
+    background: color-mix(in srgb, var(--ink-600) 80%, var(--amber) 8%);
+    border-color: var(--amber-border);
+
+    .cmp-divider-grip span {
+      background: var(--amber-border);
+    }
+  }
+}
+
+.cmp-divider-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+// 2×3 dot grip indicator
+.cmp-divider-grip {
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  gap: 2.5px;
+  padding: var(--sp-1);
+
+  span {
+    width: 2.5px;
+    height: 2.5px;
+    border-radius: 50%;
+    background: var(--border-default);
+    transition: background var(--t-fast);
+  }
+}

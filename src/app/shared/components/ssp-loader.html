@@ -1,0 +1,16 @@
+<div class="ms-host" [class.ms-host--full]="fullPage()" [class]="'ms-host--' + size()">
+  <div class="ms-loader">
+    <!-- Decorative left margin rule — like a manuscript's red-margin line -->
+    <span class="ms-margin"></span>
+
+    <div class="ms-lines">
+      @for (w of lines; track $index) {
+        <div class="ms-line" [style.width.%]="w" [style.--delay]="$index * 0.18 + 's'"></div>
+      }
+    </div>
+  </div>
+
+  @if (label()) {
+    <p class="ms-label">{{ label() }}</p>
+  }
+</div>

@@ -1,0 +1,201 @@
+<div class="cmp-page">
+
+  <!-- ── Toolbar ─────────────────────────────────────── -->
+  <header class="cmp-toolbar animate-fade-in-up">
+
+    <div class="cmp-toolbar-brand">
+      <i class="pi pi-objects-column cmp-brand-icon"></i>
+      <span class="cmp-brand-label">Compare</span>
+    </div>
+
+    <!-- Chapter picker -->
+    <div class="cmp-selector-row">
+      <p-select
+        [options]="projectOptions()"
+        [ngModel]="compareProjectId()"
+        (ngModelChange)="setProject($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Project…"
+        [loading]="projectsResource.isLoading()"
+        styleClass="cmp-select"
+      />
+      <i class="pi pi-angle-right cmp-selector-arrow"></i>
+      <p-select
+        [options]="chapterOptions()"
+        [ngModel]="compareChapterId()"
+        (ngModelChange)="compareChapterId.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Chapter…"
+        [disabled]="!compareProjectId()"
+        [loading]="chaptersResource.isLoading()"
+        styleClass="cmp-select"
+      />
+    </div>
+
+    <!-- Panel toggles -->
+    <div class="cmp-panel-toggles">
+      <button
+        class="cmp-toggle cmp-toggle--source"
+        [class.cmp-toggle--on]="showSource()"
+        (click)="togglePanel('source')"
+        [disabled]="visibleCount() === 1 && showSource()"
+        title="Toggle Source panel"
+      >
+        <i class="pi pi-book"></i>
+        <span>Source</span>
+      </button>
+      <button
+        class="cmp-toggle cmp-toggle--ai"
+        [class.cmp-toggle--on]="showAiDraft()"
+        (click)="togglePanel('ai')"
+        [disabled]="visibleCount() === 1 && showAiDraft()"
+        title="Toggle AI Draft panel"
+      >
+        <i class="pi pi-robot"></i>
+        <span>AI Draft</span>
+      </button>
+      <button
+        class="cmp-toggle cmp-toggle--user"
+        [class.cmp-toggle--on]="showUserVersion()"
+        (click)="togglePanel('user')"
+        [disabled]="visibleCount() === 1 && showUserVersion()"
+        title="Toggle Your Version panel"
+      >
+        <i class="pi pi-user-edit"></i>
+        <span>Your Version</span>
+      </button>
+    </div>
+
+  </header>
+
+  <!-- ── Panels ──────────────────────────────────────── -->
+  <div
+    class="cmp-panels"
+    [class.cmp-panels--resizing]="isResizing()"
+    #panelsContainer
+  >
+
+    <!-- Source panel -->
+    @if (showSource()) {
+      <section class="cmp-panel cmp-panel--source" [style.flex-basis.%]="effW().source">
+        <header class="cmp-panel-head cmp-panel-head--source">
+          <div class="cmp-panel-title-row">
+            <i class="pi pi-book cmp-panel-icon"></i>
+            <span class="cmp-panel-title">Source Text</span>
+          </div>
+          <span class="cmp-panel-tag cmp-panel-tag--source">Original</span>
+        </header>
+        <div class="cmp-panel-body">
+          @if (!compareChapterId()) {
+            <div class="cmp-empty">
+              <i class="pi pi-book cmp-empty-icon"></i>
+              <p>Select a project and chapter to view source text</p>
+            </div>
+          } @else if (chapterDataResource.isLoading()) {
+            <app-ssp-loader size="sm" label="Loading source…" />
+          } @else if (!sourceText()) {
+            <div class="cmp-empty">
+              <i class="pi pi-file cmp-empty-icon"></i>
+              <p>Source text not yet available for this chapter</p>
+            </div>
+          } @else {
+            <p class="cmp-text cmp-text--source">{{ sourceText() }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Divider: source → next -->
+    @if (showSource() && (showAiDraft() || showUserVersion())) {
+      <div class="cmp-divider" (mousedown)="startResize('source', nextAfterSource(), $event)">
+        <div class="cmp-divider-track">
+          <div class="cmp-divider-grip">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- AI Draft panel -->
+    @if (showAiDraft()) {
+      <section class="cmp-panel cmp-panel--ai" [style.flex-basis.%]="effW().ai">
+        <header class="cmp-panel-head cmp-panel-head--ai">
+          <div class="cmp-panel-title-row">
+            <i class="pi pi-robot cmp-panel-icon"></i>
+            <span class="cmp-panel-title">AI Draft</span>
+          </div>
+          <span class="cmp-panel-tag cmp-panel-tag--ai">Generated</span>
+        </header>
+        <div class="cmp-panel-body">
+          @if (!compareChapterId()) {
+            <div class="cmp-empty">
+              <i class="pi pi-robot cmp-empty-icon"></i>
+              <p>Select a project and chapter above</p>
+            </div>
+          } @else if (translationResource.isLoading()) {
+            <app-ssp-loader size="sm" label="Loading translation…" />
+          } @else if (!hasTranslation()) {
+            <div class="cmp-empty">
+              <i class="pi pi-language cmp-empty-icon"></i>
+              <p>No translation available for this chapter</p>
+            </div>
+          } @else {
+            <p class="cmp-text cmp-text--ai">{{ aiText() }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Divider: ai → user -->
+    @if (showAiDraft() && showUserVersion()) {
+      <div class="cmp-divider" (mousedown)="startResize('ai', 'user', $event)">
+        <div class="cmp-divider-track">
+          <div class="cmp-divider-grip">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Your Version panel -->
+    @if (showUserVersion()) {
+      <section class="cmp-panel cmp-panel--user" [style.flex-basis.%]="effW().user">
+        <header class="cmp-panel-head cmp-panel-head--user">
+          <div class="cmp-panel-title-row">
+            <i class="pi pi-user-edit cmp-panel-icon"></i>
+            <span class="cmp-panel-title">Your Version</span>
+          </div>
+          <span class="cmp-panel-tag cmp-panel-tag--user">Revised</span>
+        </header>
+        <div class="cmp-panel-body">
+          @if (!compareChapterId()) {
+            <div class="cmp-empty">
+              <i class="pi pi-user-edit cmp-empty-icon"></i>
+              <p>Select a project and chapter above</p>
+            </div>
+          } @else if (translationResource.isLoading()) {
+            <app-ssp-loader size="sm" label="Loading translation…" />
+          } @else if (!hasTranslation()) {
+            <div class="cmp-empty">
+              <i class="pi pi-language cmp-empty-icon"></i>
+              <p>No translation available for this chapter</p>
+            </div>
+          } @else {
+            @if (!hasUserRevision()) {
+              <div class="cmp-no-revision">
+                <i class="pi pi-info-circle"></i>
+                No revision yet — showing AI output
+              </div>
+            }
+            <p class="cmp-text cmp-text--user">{{ userText() }}</p>
+          }
+        </div>
+      </section>
+    }
+
+  </div>
+</div>

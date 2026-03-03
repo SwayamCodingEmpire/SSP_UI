@@ -1,0 +1,124 @@
+@use 'styles/mixins' as *;
+
+.project-card {
+  @include card-base;
+  @include card-hover;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+}
+
+.card-top {
+  @include flex-between;
+  gap: var(--sp-3);
+}
+
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--sp-1);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+
+  .project-card:hover & { opacity: 1; }
+
+  @include touch { opacity: 1; } // always show on touch
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--ink-600);
+  color: var(--mist);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast);
+  font-size: 0.7rem;
+
+  &:hover { border-color: var(--border-default); color: var(--parchment); }
+  &--danger:hover { border-color: var(--crimson-border); color: var(--crimson); background: var(--crimson-dim); }
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--parchment);
+  letter-spacing: var(--tracking-tight);
+  @include line-clamp(2);
+}
+
+.card-desc {
+  font-size: var(--text-sm);
+  color: var(--mist);
+  @include line-clamp(2);
+  line-height: var(--leading-normal);
+}
+
+.card-style {
+  font-family: var(--font-reading);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--dust);
+  @include line-clamp(1);
+}
+
+.card-stats {
+  display: flex;
+  gap: var(--sp-4);
+  margin-top: auto;
+  padding-top: var(--sp-2);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-sm);
+  color: var(--mist);
+
+  i { font-size: 0.7rem; color: var(--dust); }
+}
+
+.card-footer {
+  @include flex-between;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-faint);
+  margin-top: var(--sp-1);
+}
+
+.card-time {
+  font-size: var(--text-xs);
+  color: var(--dust);
+}
+
+.card-arrow {
+  font-size: 0.7rem;
+  color: var(--dust);
+  transition: all var(--t-normal);
+  transform: translateX(0);
+
+  .project-card:hover & {
+    color: var(--amber);
+    transform: translateX(3px);
+  }
+}

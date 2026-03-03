@@ -1,0 +1,6 @@
+<span class="badge" [class]="config().cssClass" [class.badge--sm]="size() === 'sm'">
+  @if (config().pulse) {
+    <span class="badge-dot"></span>
+  }
+  {{ config().label }}
+</span>

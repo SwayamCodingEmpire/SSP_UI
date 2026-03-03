@@ -1,0 +1,39 @@
+.pulse-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  position: relative;
+
+  &--amber  { --dot-color: var(--amber);   }
+  &--sage   { --dot-color: var(--sage);    }
+  &--crimson{ --dot-color: var(--crimson); }
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot-color, var(--amber));
+  animation: pulse 1.6s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+.pulse-ring {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot-color, var(--amber));
+  transform: translateY(-50%);
+  animation: pulseAmber 1.6s ease-in-out infinite;
+  opacity: 0.5;
+}
+
+.pulse-label {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--mist);
+}

@@ -1,0 +1,29 @@
+<article class="scene-card" [class]="'scene-card--' + scene().narrativeTimeType.toLowerCase()">
+  <div class="scene-top">
+    <div class="scene-badges">
+      <app-status-badge [status]="scene().type" size="sm" />
+      <app-status-badge [status]="scene().narrativeTimeType" size="sm" />
+    </div>
+    <app-tension-bar [level]="scene().tensionLevel" [showLabel]="true" [compact]="true" />
+  </div>
+
+  @if (scene().location) {
+    <p class="scene-location">
+      <i class="pi pi-map-marker"></i>
+      {{ scene().location }}
+    </p>
+  }
+
+  <p class="scene-summary">{{ scene().summary }}</p>
+
+  <div class="scene-meta">
+    <span class="meta-chip">{{ scene().pace }}</span>
+    <span class="meta-chip">{{ scene().tone }}</span>
+    @if (scene().chapterIds.length) {
+      <span class="meta-chip meta-chip--chapters">
+        <i class="pi pi-book"></i>
+        Ch. {{ scene().chapterIds.join(', ') }}
+      </span>
+    }
+  </div>
+</article>

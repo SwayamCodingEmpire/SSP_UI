@@ -1,0 +1,37 @@
+@use '../../../styles/mixins' as *;
+
+.dashboard {
+  @include page-enter;
+}
+
+.loader-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-16) 0;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--sp-5);
+  margin-top: var(--sp-6);
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    margin-top: var(--sp-4);
+  }
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--crimson-dim);
+  border: 1px solid var(--crimson-border);
+  border-radius: var(--radius-md);
+  color: var(--crimson);
+  font-size: var(--text-sm);
+  margin-top: var(--sp-6);
+}

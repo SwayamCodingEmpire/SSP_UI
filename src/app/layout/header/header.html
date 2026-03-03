@@ -1,0 +1,23 @@
+<!-- Tablet/Mobile topbar (hidden on desktop) -->
+<header class="topbar">
+  <button class="topbar-menu" (click)="toggleSidebar()" aria-label="Open menu">
+    <i class="pi pi-bars"></i>
+  </button>
+
+  <div class="topbar-logo">
+    <span class="logo-mark">◈</span>
+    <span class="logo-name">SSP</span>
+  </div>
+
+  <a class="topbar-action" routerLink="/projects/new" aria-label="New project">
+    <i class="pi pi-plus"></i>
+  </a>
+</header>
+
+<!-- Overlay sidebar for tablet (slide-in) -->
+@if (sidebarOpen()) {
+  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+  <div class="sidebar-drawer animate-fade-in">
+    <app-sidebar />
+  </div>
+}

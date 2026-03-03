@@ -1,0 +1,26 @@
+<header class="page-header animate-fade-in-up">
+  @if (breadcrumbs().length) {
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      @for (crumb of breadcrumbs(); track crumb.label; let last = $last) {
+        @if (!last) {
+          <a class="crumb-link" [routerLink]="crumb.link">{{ crumb.label }}</a>
+          <span class="crumb-sep" aria-hidden="true">›</span>
+        } @else {
+          <span class="crumb-current" aria-current="page">{{ crumb.label }}</span>
+        }
+      }
+    </nav>
+  }
+
+  <div class="header-row">
+    <div class="header-text">
+      <h1 class="header-title">{{ title() }}</h1>
+      @if (subtitle()) {
+        <p class="header-subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+    <div class="header-actions">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</header>

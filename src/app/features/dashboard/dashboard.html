@@ -1,0 +1,37 @@
+<div class="dashboard animate-fade-in-up">
+  <app-page-header
+    title="Projects"
+    subtitle="Your novel translation workspace"
+  >
+    <a class="btn-primary" routerLink="/projects/new">
+      <i class="pi pi-plus"></i> New Project
+    </a>
+  </app-page-header>
+
+  @if (projectsResource.isLoading()) {
+    <div class="loader-wrap">
+      <app-ssp-loader size="md" label="Loading projects…" />
+    </div>
+  } @else if (projectsResource.error()) {
+    <div class="error-banner">
+      <i class="pi pi-exclamation-triangle"></i>
+      Failed to load projects. Check your connection and try again.
+    </div>
+  } @else if (!projectsResource.value()?.length) {
+    <app-empty-state
+      icon="pi pi-book"
+      title="No projects yet"
+      description="Create your first project to start translating novels with context-aware AI."
+    />
+  } @else {
+    <div class="project-grid">
+      @for (project of projectsResource.value(); track project.id) {
+        <app-project-card
+          [project]="project"
+          (editRequest)="onEdit($event)"
+          (deleteRequest)="onDelete($event)"
+        />
+      }
+    </div>
+  }
+</div>

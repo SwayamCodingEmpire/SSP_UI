@@ -1,0 +1,42 @@
+<article class="char-card" [class]="'char-card--' + character().role.toLowerCase()">
+  <!-- Header row: role badge + debut chapter -->
+  <div class="char-header">
+    <app-status-badge [status]="character().role" size="sm" />
+    <span class="char-debut" title="First appearance">Ch. {{ character().firstAppearanceChapter }}</span>
+  </div>
+
+  <!-- Names -->
+  <div class="char-names">
+    <h3 class="char-original">{{ character().name }}</h3>
+    @if (character().translatedName) {
+      <p class="char-translated">{{ character().translatedName }}</p>
+    }
+  </div>
+
+  <!-- Aliases -->
+  @if (hasAliases()) {
+    <div class="char-aliases">
+      <span class="char-aliases-label">a.k.a.</span>
+      @for (alias of character().aliases; track alias) {
+        <span class="alias-tag">{{ alias }}</span>
+      }
+    </div>
+  }
+
+  <!-- Personality traits -->
+  @if (traitsArray().length) {
+    <div class="char-traits">
+      @for (trait of traitsArray(); track trait) {
+        <span class="trait-tag">{{ trait }}</span>
+      }
+    </div>
+  }
+
+  <!-- Voice example -->
+  @if (character().voiceExample) {
+    <blockquote class="char-voice">
+      <i class="pi pi-quote-left"></i>
+      {{ character().voiceExample }}
+    </blockquote>
+  }
+</article>

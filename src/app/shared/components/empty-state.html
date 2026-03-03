@@ -1,0 +1,12 @@
+<div class="empty-state animate-fade-in-up">
+  <div class="empty-icon">
+    <i [class]="icon()"></i>
+  </div>
+  <h3 class="empty-title">{{ title() }}</h3>
+  @if (description()) {
+    <p class="empty-desc">{{ description() }}</p>
+  }
+  <div class="empty-action">
+    <ng-content></ng-content>
+  </div>
+</div>

@@ -1,0 +1,288 @@
+@use 'styles/mixins' as *;
+
+.cf-page {
+  @include page-enter;
+  max-width: 760px;
+}
+
+.cf-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-12) 0;
+}
+
+// ── Shared meta row ───────────────────────────────
+.cf-shared {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+
+  @include mobile { grid-template-columns: 1fr; }
+}
+
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cf-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--mist);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.cf-optional {
+  font-weight: 400;
+  color: var(--dust);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-2xs);
+  margin-left: var(--sp-1);
+}
+
+.cf-input {
+  background: var(--ink-700);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--parchment);
+  font-size: var(--text-base);
+  padding: var(--sp-3) var(--sp-4);
+  transition: border-color var(--t-fast);
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-dim);
+  }
+
+  &::placeholder { color: var(--dust); }
+
+  &--num {
+    font-family: var(--font-mono);
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button { -webkit-appearance: none; }
+  }
+}
+
+.cf-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--crimson-dim);
+  border: 1px solid var(--crimson-border);
+  border-radius: var(--radius-md);
+  color: var(--crimson);
+  font-size: var(--text-sm);
+  margin-top: var(--sp-4);
+}
+
+// ── Custom tab bar ────────────────────────────────
+.cf-tabs {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--text-sm);
+  color: var(--mist);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+
+  i { font-size: 0.8rem; }
+
+  &:hover:not(.cf-tab--active) { color: var(--parchment-dim); }
+
+  &--active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+    background: var(--amber-dim);
+  }
+}
+
+// ── Panel (tab content area) ──────────────────────
+.cf-panel {
+  padding: var(--sp-5) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+// ── Drag-drop zone ────────────────────────────────
+.cf-file-input { display: none; }
+
+.cf-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  min-height: 220px;
+  padding: var(--sp-10) var(--sp-8);
+  background: var(--ink-700);
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--t-fast), background var(--t-fast);
+
+  &:hover {
+    border-color: var(--amber-border);
+    background: var(--ink-600);
+  }
+
+  &--over {
+    border-color: var(--amber);
+    background: var(--amber-dim);
+  }
+}
+
+.cf-drop-icon {
+  font-size: 2.5rem;
+  color: var(--amber);
+  opacity: 0.45;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+
+  .cf-drop-zone:hover & { opacity: 0.75; transform: translateY(-2px); }
+  .cf-drop-zone--over & { opacity: 1;    transform: translateY(-4px); }
+}
+
+.cf-drop-text {
+  font-size: var(--text-md);
+  color: var(--parchment-dim);
+  font-weight: 500;
+}
+
+.cf-drop-formats {
+  font-size: var(--text-xs);
+  color: var(--mist);
+  letter-spacing: var(--tracking-wide);
+  font-family: var(--font-mono);
+}
+
+// Selected file state
+.cf-file-selected {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3);
+  background: var(--ink-600);
+  border-radius: var(--radius-md);
+  cursor: default;
+  text-align: left;
+}
+
+.cf-file-icon {
+  font-size: 1.5rem;
+  color: var(--amber);
+  flex-shrink: 0;
+}
+
+.cf-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cf-file-name {
+  font-size: var(--text-sm);
+  color: var(--parchment);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cf-file-size {
+  font-size: var(--text-xs);
+  color: var(--mist);
+  font-family: var(--font-mono);
+}
+
+.cf-file-clear {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--mist);
+  cursor: pointer;
+  flex-shrink: 0;
+  @include flex-center;
+  font-size: 0.7rem;
+  transition: all var(--t-fast);
+
+  &:hover {
+    border-color: var(--crimson-border);
+    color: var(--crimson);
+    background: var(--crimson-dim);
+  }
+}
+
+// ── Textarea ──────────────────────────────────────
+.cf-textarea {
+  width: 100%;
+  background: var(--ink-700);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--parchment);
+  font-size: var(--text-sm);
+  padding: var(--sp-3) var(--sp-4);
+  line-height: var(--leading-relaxed);
+  resize: vertical;
+  transition: border-color var(--t-fast);
+  @include scrollbar-thin;
+
+  &:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-dim);
+  }
+
+  &::placeholder { color: var(--dust); }
+
+  &--source { font-family: var(--font-original); }
+  &--mono   { font-family: var(--font-mono); }
+}
+
+// ── JSON hint ─────────────────────────────────────
+.cf-json-hint {
+  font-size: var(--text-sm);
+  color: var(--mist);
+  line-height: var(--leading-relaxed);
+
+  code {
+    font-family: var(--font-mono);
+    background: var(--ink-600);
+    padding: 1px var(--sp-1);
+    border-radius: var(--radius-xs);
+    color: var(--amber);
+    font-size: var(--text-xs);
+  }
+}
+
+// ── Submit row ────────────────────────────────────
+.cf-submit {
+  display: flex;
+  justify-content: flex-end;
+}

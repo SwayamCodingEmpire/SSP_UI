@@ -1,0 +1,9 @@
+@if (active()) {
+  <span class="pulse-wrap" [class]="'pulse-wrap--' + variant()">
+    <span class="pulse-ring"></span>
+    <span class="pulse-dot"></span>
+    @if (label()) {
+      <span class="pulse-label">{{ label() }}</span>
+    }
+  </span>
+}

@@ -1,0 +1,114 @@
+<div class="pf-page animate-fade-in-up">
+  <app-page-header
+    [title]="isEditMode() ? 'Edit Project' : 'New Project'"
+    [subtitle]="isEditMode() ? 'Update project settings' : 'Start a new translation project'"
+    [breadcrumbs]="breadcrumbs()"
+  />
+
+  @if (projectResource.isLoading()) {
+    <div class="pf-loader">
+      <app-ssp-loader size="sm" label="Loading project…" />
+    </div>
+  } @else {
+    <form class="pf-form" (ngSubmit)="save()" #f="ngForm">
+
+      <div class="pf-field">
+        <label class="pf-label" for="title">Project Title <span class="req">*</span></label>
+        <input
+          pInputText
+          id="title"
+          class="pf-input"
+          placeholder="e.g. Fate/Stay Night Vol. 1"
+          [ngModel]="title()"
+          (ngModelChange)="title.set($event)"
+          name="title"
+          required
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="pf-row">
+        <div class="pf-field">
+          <label class="pf-label" for="srcLang">Source Language</label>
+          <p-select
+            inputId="srcLang"
+            [options]="languages"
+            optionLabel="label"
+            optionValue="code"
+            [ngModel]="sourceLanguage()"
+            (ngModelChange)="sourceLanguage.set($event)"
+            name="srcLang"
+            styleClass="pf-select"
+            placeholder="Select language"
+          />
+        </div>
+
+        <div class="pf-field">
+          <label class="pf-label" for="tgtLang">Target Language</label>
+          <p-select
+            inputId="tgtLang"
+            [options]="languages"
+            optionLabel="label"
+            optionValue="code"
+            [ngModel]="targetLanguage()"
+            (ngModelChange)="targetLanguage.set($event)"
+            name="tgtLang"
+            styleClass="pf-select"
+            placeholder="Select language"
+          />
+        </div>
+      </div>
+
+      <div class="pf-field">
+        <label class="pf-label" for="description">Description</label>
+        <textarea
+          pTextarea
+          id="description"
+          class="pf-textarea"
+          placeholder="Brief description of the source material…"
+          rows="3"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+          name="description"
+        ></textarea>
+      </div>
+
+      <div class="pf-field">
+        <label class="pf-label" for="style">
+          Translation Style
+          <span class="pf-hint">Describe the voice, tone, and literary style for the AI</span>
+        </label>
+        <textarea
+          pTextarea
+          id="style"
+          class="pf-textarea"
+          placeholder="e.g. Dark fantasy, lyrical Dostoevsky-like inner monologue. Keep honorifics untranslated (senpai, sensei). Preserve metaphors over literal accuracy."
+          rows="4"
+          [ngModel]="translationStyle()"
+          (ngModelChange)="translationStyle.set($event)"
+          name="style"
+        ></textarea>
+      </div>
+
+      @if (error()) {
+        <div class="pf-error">
+          <i class="pi pi-exclamation-circle"></i>
+          {{ error() }}
+        </div>
+      }
+
+      <div class="pf-actions">
+        <a class="btn-ghost" routerLink="/">Cancel</a>
+        <button class="btn-primary" type="submit" [disabled]="saving()">
+          @if (saving()) {
+            <i class="pi pi-spin pi-spinner"></i>
+          } @else {
+            <i class="pi pi-check"></i>
+          }
+          {{ saving() ? 'Saving…' : isEditMode() ? 'Save Changes' : 'Create Project' }}
+        </button>
+      </div>
+
+    </form>
+  }
+</div>

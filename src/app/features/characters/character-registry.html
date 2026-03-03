@@ -1,0 +1,323 @@
+<div class="cr-page animate-fade-in-up">
+  <app-page-header
+    title="Character Registry"
+    subtitle="All characters discovered across this project's chapters"
+    [breadcrumbs]="breadcrumbs()"
+  >
+    <a class="btn-ghost" [routerLink]="['/projects', id(), 'scenes']">
+      <i class="pi pi-list"></i> Scenes
+    </a>
+  </app-page-header>
+
+  <!-- Role filters -->
+  <div class="cr-filters">
+    @for (f of roleFilters; track f.value) {
+      <button
+        class="cr-filter-btn"
+        [class.cr-filter-btn--active]="activeFilter() === f.value"
+        (click)="setFilter(f.value)"
+      >{{ f.label }}</button>
+    }
+  </div>
+
+  <!-- ── Character grid ──────────────────────────────── -->
+  @if (charactersResource.isLoading()) {
+    <div class="cr-loader"><app-ssp-loader size="md" label="Loading characters…" /></div>
+  } @else if (charactersResource.error()) {
+    <div class="cr-error"><i class="pi pi-exclamation-triangle"></i> Failed to load characters.</div>
+  } @else if (!filtered().length) {
+    <app-empty-state
+      icon="pi pi-users"
+      [title]="activeFilter() === 'ALL' ? 'No characters yet' : 'No characters in this category'"
+      [description]="activeFilter() === 'ALL' ? 'Characters are automatically extracted when you analyze chapters.' : 'Try a different filter.'"
+    />
+  } @else {
+    <div class="cr-grid">
+      @for (character of filtered(); track character.id) {
+        <div
+          class="cr-card-wrap"
+          [class.cr-card-wrap--selected]="selectedCharacterId() === character.id"
+          (click)="selectCharacter(character.id)"
+          title="Click to view character arc"
+        >
+          <app-character-card [character]="character" />
+          <div class="cr-card-arc-hint">
+            <i class="pi pi-chart-line"></i>
+            @if (selectedCharacterId() === character.id) { Hide arc } @else { View arc }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Character Arc Panel ─────────────────────────── -->
+  @if (selectedCharacter()) {
+    <section class="cr-arc-panel animate-fade-in-up">
+      <div class="cr-arc-header">
+        <div class="cr-arc-title-group">
+          <i class="pi pi-chart-line cr-arc-icon"></i>
+          <div>
+            <p class="cr-arc-label">Character Arc</p>
+            <h3 class="cr-arc-name">{{ selectedCharacter()!.name }}</h3>
+          </div>
+        </div>
+        <button class="cr-arc-close" (click)="selectCharacter(selectedCharacterId()!)">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      @if (characterStatesResource.isLoading()) {
+        <div class="cr-arc-loading"><app-ssp-loader size="sm" label="Loading arc data…" /></div>
+      } @else if (!characterStatesResource.value()?.length) {
+        <div class="cr-arc-empty">
+          <i class="pi pi-hourglass"></i>
+          No arc data yet — character states are populated as chapters are analyzed.
+        </div>
+      } @else {
+        <!-- Chapter dots progress strip -->
+        <div class="cr-arc-strip">
+          @for (state of characterStatesResource.value()!; track state.id) {
+            <div class="cr-arc-dot-wrap">
+              <div
+                class="cr-arc-dot"
+                [style.background]="emotionColor(state.dialogueEmotionType)"
+                [title]="'Ch. ' + state.chapterNumber + ' — ' + (state.emotionalState ?? '')"
+              ></div>
+              <span class="cr-arc-dot-ch">{{ state.chapterNumber }}</span>
+            </div>
+          }
+          <div class="cr-arc-strip-line"></div>
+        </div>
+
+        <!-- State cards — horizontal scroll -->
+        <div class="cr-arc-scroll">
+          @for (state of characterStatesResource.value()!; track state.id) {
+            <div class="cr-state-card">
+              <!-- Chapter badge + arc stage -->
+              <div class="cr-state-top">
+                <span class="cr-state-ch">Ch. {{ state.chapterNumber }}</span>
+                @if (state.arcStage) {
+                  <span class="cr-state-stage">{{ state.arcStage }}</span>
+                }
+              </div>
+
+              <!-- Emotion -->
+              @if (state.emotionalState) {
+                <div class="cr-state-row">
+                  <span class="cr-state-key">Emotional</span>
+                  <span class="cr-state-val">{{ state.emotionalState }}</span>
+                </div>
+              }
+
+              <!-- Physical -->
+              @if (state.physicalState) {
+                <div class="cr-state-row">
+                  <span class="cr-state-key">Physical</span>
+                  <span class="cr-state-val cr-state-val--dim">{{ state.physicalState }}</span>
+                </div>
+              }
+
+              <!-- Goal -->
+              @if (state.currentGoal) {
+                <div class="cr-state-row">
+                  <span class="cr-state-key">Goal</span>
+                  <span class="cr-state-val">{{ state.currentGoal }}</span>
+                </div>
+              }
+
+              <!-- Affiliation -->
+              @if (state.affiliation) {
+                <div class="cr-state-row">
+                  <span class="cr-state-key">Faction</span>
+                  <span class="cr-state-val">{{ state.affiliation }}</span>
+                </div>
+              }
+
+              <!-- Loyalty -->
+              @if (state.loyalty) {
+                <div class="cr-state-row">
+                  <span class="cr-state-key">Loyalty</span>
+                  <span class="cr-state-val cr-state-val--dim">{{ state.loyalty }}</span>
+                </div>
+              }
+
+              <!-- Dialogue -->
+              @if (state.dialogueEmotionType) {
+                <div class="cr-state-dialogue">
+                  <div class="cr-dialogue-head">
+                    <span
+                      class="cr-dialogue-type"
+                      [style.color]="emotionColor(state.dialogueEmotionType)"
+                      [style.border-color]="emotionColor(state.dialogueEmotionType)"
+                    >{{ state.dialogueEmotionType }}</span>
+                    @if (state.dialogueEmotionIntensity !== null) {
+                      <div class="cr-intensity-bar">
+                        <div
+                          class="cr-intensity-fill"
+                          [style.width.%]="intensityPct(state.dialogueEmotionIntensity)"
+                          [style.background]="emotionColor(state.dialogueEmotionType)"
+                        ></div>
+                      </div>
+                      <span class="cr-intensity-val">{{ intensityPct(state.dialogueEmotionIntensity) }}%</span>
+                    }
+                  </div>
+                  @if (state.dialogueSummary) {
+                    <p class="cr-dialogue-summary">"{{ state.dialogueSummary }}"</p>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ── Relationships ───────────────────────────────── -->
+  @if (!relationshipsResource.isLoading() && relationshipsResource.value()?.length) {
+    <section class="cr-rel-section">
+      <h2 class="cr-section-title">
+        <i class="pi pi-share-alt"></i>
+        Relationships
+        <span class="cr-rel-count">{{ relationshipsResource.value()!.length }}</span>
+      </h2>
+
+      <div class="cr-rel-list">
+        @for (rel of relationshipsResource.value()!; track rel.id) {
+          <div class="rel-card rel-card--{{ rel.type.toLowerCase() }}">
+            <!-- Characters row -->
+            <div class="rel-chars">
+              <div class="rel-char">
+                <span class="rel-char-name">{{ rel.character1Name }}</span>
+              </div>
+              <div class="rel-connector">
+                <span class="rel-type-badge rel-type-badge--{{ rel.type.toLowerCase() }}">
+                  {{ relationshipLabels[rel.type] }}
+                </span>
+                <div class="rel-line"></div>
+              </div>
+              <div class="rel-char rel-char--right">
+                <span class="rel-char-name">{{ rel.character2Name }}</span>
+              </div>
+            </div>
+
+            <!-- Meta + history toggle -->
+            <div class="rel-meta">
+              @if (rel.establishedAtChapter) {
+                <span class="rel-meta-item">
+                  <i class="pi pi-book"></i> Ch. {{ rel.establishedAtChapter }}
+                </span>
+              }
+              @if (rel.affinity !== null && rel.affinity !== undefined) {
+                <span class="rel-meta-item rel-affinity">
+                  <span class="rel-affinity-bar">
+                    <span
+                      class="rel-affinity-fill"
+                      [style.width.%]="Math.abs(rel.affinity)"
+                      [class.rel-affinity-fill--neg]="rel.affinity < 0"
+                    ></span>
+                  </span>
+                  {{ rel.affinity > 0 ? '+' : '' }}{{ rel.affinity }}
+                </span>
+              }
+              <button
+                class="rel-history-btn"
+                [class.rel-history-btn--active]="expandedRelId() === rel.id"
+                (click)="toggleRelHistory(rel.id)"
+              >
+                <i class="pi pi-history"></i>
+                Arc
+                <i class="pi" [class.pi-chevron-down]="expandedRelId() !== rel.id" [class.pi-chevron-up]="expandedRelId() === rel.id"></i>
+              </button>
+            </div>
+
+            @if (rel.description) {
+              <p class="rel-description">{{ rel.description }}</p>
+            }
+
+            <!-- ── Relationship history (expanded) ──── -->
+            @if (expandedRelId() === rel.id) {
+              <div class="rel-history animate-fade-in-up">
+                @if (relHistoryResource.isLoading()) {
+                  <div class="rel-history-loading">
+                    <app-ssp-loader size="sm" label="Loading arc…" />
+                  </div>
+                } @else if (relAffinityChart(); as chart) {
+                  <!-- SVG Affinity curve -->
+                  <div class="rel-chart-wrap">
+                    <span class="rel-chart-label rel-chart-label--top">+</span>
+                    <svg
+                      class="rel-chart-svg"
+                      [attr.viewBox]="'0 0 ' + chart.W + ' ' + chart.H"
+                      [attr.width]="chart.W"
+                      [attr.height]="chart.H"
+                      preserveAspectRatio="none"
+                    >
+                      <!-- Zero baseline -->
+                      <line
+                        [attr.x1]="14" [attr.y1]="chart.zeroY"
+                        [attr.x2]="chart.W - 14" [attr.y2]="chart.zeroY"
+                        stroke="var(--border-subtle)" stroke-width="1" stroke-dasharray="3 3"
+                      />
+                      <!-- Affinity polyline -->
+                      @if (chart.pts.length > 1) {
+                        <polyline
+                          [attr.points]="chart.polyline"
+                          fill="none"
+                          stroke="var(--mist)"
+                          stroke-width="1.5"
+                          stroke-linejoin="round"
+                          stroke-linecap="round"
+                          opacity="0.4"
+                        />
+                      }
+                      <!-- Colored points per type -->
+                      @for (pt of chart.pts; track pt.chapterNumber) {
+                        <circle
+                          [attr.cx]="pt.x" [attr.cy]="pt.y" r="4"
+                          [attr.fill]="pt.color"
+                          stroke="var(--ink-700)" stroke-width="1.5"
+                        />
+                        <text
+                          [attr.x]="pt.x" [attr.y]="chart.H - 1"
+                          text-anchor="middle"
+                          fill="var(--dust)"
+                          font-size="7"
+                          font-family="var(--font-mono)"
+                        >{{ pt.chapterNumber }}</text>
+                      }
+                    </svg>
+                    <span class="rel-chart-label rel-chart-label--bot">−</span>
+                  </div>
+
+                  <!-- History entries -->
+                  <div class="rel-history-entries">
+                    @for (entry of relHistoryResource.value()!; track entry.id) {
+                      <div class="rel-history-entry">
+                        <div class="rel-he-head">
+                          <span class="rel-he-ch">Ch. {{ entry.chapterNumber }}</span>
+                          <span
+                            class="rel-he-type"
+                            [style.color]="relTypeColor(entry.type)"
+                            [style.border-color]="relTypeColor(entry.type)"
+                          >{{ relationshipLabels[entry.type] }}</span>
+                          <span class="rel-he-aff" [class.rel-he-aff--neg]="entry.affinity < 0">
+                            {{ entry.affinity > 0 ? '+' : '' }}{{ entry.affinity }}
+                          </span>
+                        </div>
+                        <p class="rel-he-desc">{{ entry.description }}</p>
+                        @if (entry.dynamicsNote) {
+                          <p class="rel-he-note"><i class="pi pi-info-circle"></i> {{ entry.dynamicsNote }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

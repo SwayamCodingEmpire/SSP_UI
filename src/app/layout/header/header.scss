@@ -1,0 +1,91 @@
+@use '../../../styles/mixins' as *;
+
+.topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-h);
+  padding: 0 var(--sp-4);
+  background: var(--ink-800);
+  border-bottom: 1px solid var(--border-faint);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  backdrop-filter: blur(12px);
+
+  @media (max-width: 1023px) { display: flex; }
+}
+
+.topbar-menu {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--mist);
+  cursor: pointer;
+  @include flex-center;
+  font-size: 0.9rem;
+  transition: all var(--t-fast);
+
+  &:hover { background: var(--ink-700); color: var(--parchment); }
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.logo-mark {
+  font-size: 1.1rem;
+  color: var(--amber);
+}
+
+.logo-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--parchment);
+  letter-spacing: var(--tracking-tight);
+}
+
+.topbar-action {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--amber-dim);
+  border: 1px solid var(--amber-border);
+  color: var(--amber);
+  @include flex-center;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all var(--t-fast);
+
+  &:hover { background: var(--amber-glow); }
+}
+
+// Overlay + slide-in drawer
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(11, 15, 24, 0.7);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 200ms ease both;
+}
+
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1001;
+  animation: slideInLeft 250ms var(--ease-spring) both;
+
+  app-sidebar {
+    display: block;
+    height: 100%;
+    min-height: 100vh;
+  }
+}

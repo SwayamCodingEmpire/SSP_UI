@@ -1,0 +1,74 @@
+<div class="st-page animate-fade-in-up">
+  <app-page-header
+    title="Scene Timeline"
+    subtitle="All scenes detected across this project's chapters"
+    [breadcrumbs]="breadcrumbs()"
+  >
+    <a class="btn-ghost" [routerLink]="['/projects', id(), 'characters']">
+      <i class="pi pi-users"></i> Characters
+    </a>
+  </app-page-header>
+
+  <!-- Filters -->
+  <div class="st-filter-bar">
+    <!-- Time type -->
+    <div class="st-filter-group">
+      <span class="st-filter-label">Time</span>
+      <div class="st-filters">
+        @for (f of timeFilters; track f.value) {
+          <button
+            class="st-filter-btn"
+            [class.st-filter-btn--active]="activeTime() === f.value"
+            (click)="setTime(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Scene type -->
+    <div class="st-filter-group">
+      <span class="st-filter-label">Type</span>
+      <div class="st-filters">
+        @for (f of typeFilters; track f.value) {
+          <button
+            class="st-filter-btn"
+            [class.st-filter-btn--active]="activeType() === f.value"
+            (click)="setType(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (scenesResource.isLoading()) {
+    <div class="st-loader">
+      <app-ssp-loader size="md" label="Loading scenes…" />
+    </div>
+  } @else if (scenesResource.error()) {
+    <div class="st-error">
+      <i class="pi pi-exclamation-triangle"></i>
+      Failed to load scenes.
+    </div>
+  } @else if (!filtered().length) {
+    <app-empty-state
+      icon="pi pi-list"
+      [title]="scenesResource.value()?.length === 0 ? 'No scenes yet' : 'No scenes match the filter'"
+      [description]="scenesResource.value()?.length === 0
+        ? 'Scenes are automatically detected when chapters are analyzed.'
+        : 'Try adjusting your filters.'"
+    />
+  } @else {
+    <div class="st-count">
+      {{ filtered().length }} scene{{ filtered().length !== 1 ? 's' : '' }}
+    </div>
+    <div class="st-grid">
+      @for (scene of filtered(); track scene.id) {
+        <app-scene-card [scene]="scene" />
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,311 @@
+@if (chapterResource.isLoading()) {
+  <div class="cw-center">
+    <app-ssp-loader size="md" label="Loading chapter…" />
+  </div>
+} @else if (chapterResource.error()) {
+  <div class="cw-center cw-error animate-fade-in-up">
+    <i class="pi pi-exclamation-triangle"></i>
+    Chapter not found.
+    <a [routerLink]="['/projects', id()]" class="cw-back">← Back to project</a>
+  </div>
+} @else if (chapterResource.value(); as chapter) {
+  <div class="cw-page animate-fade-in-up">
+
+    <app-page-header
+      [title]="chapter.title || 'Chapter ' + chapter.chapterNumber"
+      [breadcrumbs]="breadcrumbs()"
+    >
+      <app-status-badge [status]="chapter.status" />
+      @if (chapter.translationStatus) {
+        <app-status-badge [status]="chapter.translationStatus" />
+      }
+    </app-page-header>
+
+    <!-- ── Side-by-side reader ─────────────────────────── -->
+    <div class="cw-reader">
+
+      <!-- Original Text Panel -->
+      <section class="cw-panel cw-panel--original">
+        <header class="cw-panel-head">
+          <span class="cw-panel-title">Original</span>
+          <span class="cw-lang-tag">{{ chapter.status }}</span>
+        </header>
+        <div class="cw-panel-body cw-panel-body--source">
+          @if (chapter.fullOriginalText) {
+            <p class="cw-text">{{ chapter.fullOriginalText }}</p>
+          } @else if (chapter.originalTextPreview) {
+            <p class="cw-text">{{ chapter.originalTextPreview }}</p>
+            <p class="cw-preview-note">Preview — full text not yet available</p>
+          } @else {
+            <p class="cw-muted">Source text not yet available.</p>
+          }
+        </div>
+      </section>
+
+      <!-- Translation Panel -->
+      <section class="cw-panel cw-panel--translation">
+        <header class="cw-panel-head">
+          <div class="cw-panel-title-group">
+            <span class="cw-panel-title">Translation</span>
+            @if (reviewState() === 'accepted') {
+              <span class="cw-verdict-badge cw-verdict-badge--accepted">
+                <i class="pi pi-check-circle"></i> Accepted
+              </span>
+            } @else if (reviewState() === 'edited') {
+              <span class="cw-verdict-badge cw-verdict-badge--edited">
+                <i class="pi pi-pencil"></i> Revised
+              </span>
+            }
+          </div>
+
+          <div class="cw-panel-head-right">
+            <!-- View toggle — only in "edited" state, not while editing -->
+            @if (reviewState() === 'edited' && !editMode()) {
+              <div class="cw-view-toggle" title="Compare versions">
+                <button
+                  class="cw-view-btn"
+                  [class.cw-view-btn--active]="viewMode() === 'final'"
+                  (click)="viewMode.set('final')"
+                >Your version</button>
+                <button
+                  class="cw-view-btn"
+                  [class.cw-view-btn--active]="viewMode() === 'ai'"
+                  (click)="viewMode.set('ai')"
+                >AI draft</button>
+              </div>
+            }
+
+            <app-async-pulse [active]="translationLoading()" variant="sage" />
+
+            @if (translationResult() && !editMode()) {
+              <div class="cw-panel-actions">
+                <button class="icon-btn" (click)="copyTranslation()" [title]="copied() ? 'Copied!' : 'Copy final'">
+                  <i [class]="copied() ? 'pi pi-check' : 'pi pi-copy'"></i>
+                </button>
+                <button class="icon-btn" (click)="downloadTranslation()" title="Download .txt">
+                  <i class="pi pi-download"></i>
+                </button>
+              </div>
+            }
+          </div>
+        </header>
+
+        <div class="cw-panel-body" [class.cw-panel-body--edit]="editMode()">
+          @if (translationLoading() && !translationResult()) {
+            <app-ssp-loader size="sm" label="Translating chapter…" />
+
+          } @else if (translationResult(); as translation) {
+
+            @if (!editMode()) {
+              <!-- Progress bar for chunked translations -->
+              @if (translation.chunked && (translation.totalSegments ?? 0) > 0) {
+                <app-segment-progress
+                  [current]="translation.translatedSegments ?? 0"
+                  [total]="translation.totalSegments ?? 0"
+                />
+              }
+
+              <!-- AI draft notice — shown only when viewing the original AI output -->
+              @if (reviewState() === 'edited' && viewMode() === 'ai') {
+                <div class="cw-ai-draft-notice">
+                  <i class="pi pi-robot"></i>
+                  Original AI output — not the final version
+                </div>
+                <p class="cw-text cw-text--ai-draft">{{ displayText() }}</p>
+              } @else {
+                <!-- Your version (default) or accepted AI text -->
+                @if (reviewState() === 'edited') {
+                  <div class="cw-final-notice">
+                    <i class="pi pi-user-edit"></i>
+                    Your revision — canonical version
+                  </div>
+                }
+                <p class="cw-text cw-text--translated">{{ displayText() }}</p>
+              }
+
+            } @else {
+              <!-- Edit textarea -->
+              <textarea
+                class="cw-edit-textarea"
+                [ngModel]="editText()"
+                (ngModelChange)="editText.set($event)"
+                placeholder="Edit the translation…"
+                spellcheck="true"
+              ></textarea>
+            }
+
+          } @else {
+            <!-- No translation yet — action card -->
+            <div class="cw-action-card">
+              <i class="pi pi-language cw-action-icon"></i>
+              <p class="cw-action-text">Generate a context-aware literary translation.</p>
+              <div class="cw-provider-row">
+                <span class="cw-provider-label">Provider</span>
+                <p-selectbutton
+                  [options]="providerOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="selectedProvider()"
+                  (ngModelChange)="selectedProvider.set($event)"
+                />
+              </div>
+              @if (translationError()) {
+                <p class="cw-inline-error">{{ translationError() }}</p>
+              }
+              <button class="btn-primary" (click)="triggerTranslation()" [disabled]="translationLoading()">
+                <i class="pi pi-play"></i> Translate Chapter
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- ── Review dock ──────────────────────────────── -->
+        @if (translationResult()) {
+
+          @if (editMode()) {
+            <!-- Edit mode: save/cancel -->
+            <div class="cw-review-bar cw-review-bar--editing">
+              @if (saveError()) {
+                <span class="cw-review-error">
+                  <i class="pi pi-exclamation-circle"></i> {{ saveError() }}
+                </span>
+              }
+              <div class="cw-review-actions">
+                <button class="cw-review-cancel" (click)="cancelEditing()" [disabled]="saving()">
+                  Cancel
+                </button>
+                <button class="btn-primary" (click)="submitEdit()" [disabled]="saving() || !editText().trim()">
+                  @if (saving()) { <i class="pi pi-spin pi-spinner"></i> } @else { <i class="pi pi-save"></i> }
+                  Submit Revision
+                </button>
+              </div>
+            </div>
+
+          } @else if (reviewState() === 'pending') {
+            <!-- Pending: accept or edit -->
+            <div class="cw-review-bar">
+              <div class="cw-review-prompt">
+                <span class="cw-review-dot"></span>
+                <span class="cw-review-label">Awaiting your review</span>
+              </div>
+              @if (saveError()) {
+                <span class="cw-review-error">
+                  <i class="pi pi-exclamation-circle"></i> {{ saveError() }}
+                </span>
+              }
+              <div class="cw-review-actions">
+                <button class="btn-accept" (click)="acceptTranslation()" [disabled]="saving()">
+                  @if (saving()) { <i class="pi pi-spin pi-spinner"></i> } @else { <i class="pi pi-check"></i> }
+                  Accept
+                </button>
+                <button class="btn-edit-start" (click)="startEditing()" [disabled]="saving()">
+                  <i class="pi pi-pencil"></i> Edit
+                </button>
+              </div>
+            </div>
+
+          } @else {
+            <!-- Verdict: accepted or revised -->
+            <div class="cw-review-bar cw-review-bar--done">
+              <div class="cw-verdict-group">
+                @if (reviewState() === 'accepted') {
+                  <span class="cw-verdict cw-verdict--accepted">
+                    <i class="pi pi-check-circle"></i> Accepted as-is
+                  </span>
+                } @else {
+                  <span class="cw-verdict cw-verdict--edited">
+                    <i class="pi pi-pencil"></i> Your revision
+                  </span>
+                }
+                @if (reviewedAtFormatted()) {
+                  <span class="cw-verdict-date">{{ reviewedAtFormatted() }}</span>
+                }
+              </div>
+              <button class="cw-verdict-change" (click)="startEditing()">
+                <i class="pi pi-pencil"></i> Edit
+              </button>
+            </div>
+          }
+        }
+      </section>
+
+    </div>
+
+    <!-- ── Analysis Section ─────────────────────────────── -->
+    <section class="cw-analysis-section">
+      <div class="cw-analysis-header" (click)="analysisOpen.set(!analysisOpen())">
+        <div class="cw-analysis-title">
+          <i class="pi pi-search"></i>
+          Analysis
+          <app-async-pulse [active]="analysisLoading()" variant="amber" />
+        </div>
+        <div class="cw-analysis-header-right">
+          @if (analysisResult()) {
+            <span class="cw-analysis-summary">
+              {{ analysisResult()!.charactersFound }} chars · {{ analysisResult()!.scenesDetected }} scenes
+            </span>
+          }
+          <i class="pi" [class.pi-chevron-down]="!analysisOpen()" [class.pi-chevron-up]="analysisOpen()"></i>
+        </div>
+      </div>
+
+      @if (analysisOpen()) {
+        <div class="cw-analysis-body">
+          @if (analysisLoading() && !analysisResult()) {
+            <app-ssp-loader size="sm" label="Analyzing chapter…" />
+          } @else if (analysisResult(); as analysis) {
+            <div class="analysis-stats">
+              <div class="analysis-stat">
+                <span class="analysis-stat-val">{{ analysis.charactersFound }}</span>
+                <span class="analysis-stat-key">Characters</span>
+              </div>
+              <div class="analysis-stat">
+                <span class="analysis-stat-val">{{ analysis.scenesDetected }}</span>
+                <span class="analysis-stat-key">Scenes</span>
+              </div>
+            </div>
+
+            <div class="analysis-columns">
+              @if (analysis.characterNames.length) {
+                <div class="analysis-col">
+                  <p class="analysis-section-title">Characters Found</p>
+                  <div class="analysis-tags">
+                    @for (name of analysis.characterNames; track name) {
+                      <span class="analysis-tag">{{ name }}</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (analysis.scenes.length) {
+                <div class="analysis-col">
+                  <p class="analysis-section-title">Scenes Detected</p>
+                  <div class="analysis-scenes">
+                    @for (scene of analysis.scenes; track $index) {
+                      <div class="scene-preview">
+                        <div class="scene-preview-head">
+                          <span class="scene-type-badge">{{ scene.type }}</span>
+                          <app-tension-bar [level]="scene.tensionLevel" />
+                        </div>
+                        <p class="scene-summary">{{ scene.summary }}</p>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (analysisError()) {
+            <div class="cw-analysis-empty">
+              <i class="pi pi-exclamation-triangle cw-analysis-fail-icon"></i>
+              <p class="cw-inline-error">{{ analysisError() }}</p>
+              <button class="btn-secondary" (click)="retryAnalysis()" [disabled]="analysisLoading()">
+                <i class="pi pi-refresh"></i> Retry Analysis
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+  </div>
+}

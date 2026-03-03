@@ -1,0 +1,34 @@
+.tension-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 60px;
+
+  &--compact .tension-track { height: 3px; }
+}
+
+.tension-track {
+  flex: 1;
+  height: 5px;
+  background: var(--ink-500);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.tension-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--t-slow);
+
+  &.bar--sage    { background: linear-gradient(90deg, var(--sage), #7ab892); }
+  &.bar--amber   { background: linear-gradient(90deg, var(--amber), var(--amber-lit)); }
+  &.bar--crimson { background: linear-gradient(90deg, var(--crimson), #e06060); }
+}
+
+.tension-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--mist);
+  white-space: nowrap;
+  min-width: 28px;
+}

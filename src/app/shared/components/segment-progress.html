@@ -1,0 +1,15 @@
+<div class="seg-progress" [class.seg-progress--compact]="compact()" [class.seg-progress--done]="done()">
+  <div class="seg-bar">
+    <div class="seg-fill" [style.width.%]="pct()"></div>
+  </div>
+  @if (!compact()) {
+    <span class="seg-label">
+      <span class="seg-current">{{ current() }}</span>
+      <span class="seg-sep">/</span>
+      <span class="seg-total">{{ total() }}</span>
+      <span class="seg-unit">segments</span>
+    </span>
+  } @else {
+    <span class="seg-pct">{{ pct() }}%</span>
+  }
+</div>

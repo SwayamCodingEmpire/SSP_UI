@@ -1,0 +1,182 @@
+<div class="cf-page animate-fade-in-up">
+  <app-page-header
+    title="Add Chapter"
+    [breadcrumbs]="breadcrumbs()"
+  />
+
+  @if (projectResource.isLoading()) {
+    <div class="cf-loading">
+      <app-ssp-loader size="sm" label="Loading project…" />
+    </div>
+  } @else {
+
+    <!-- Shared meta row -->
+    <div class="cf-shared">
+      <div class="cf-field">
+        <label class="cf-label" for="chNum">Chapter #</label>
+        <input
+          type="number"
+          id="chNum"
+          class="cf-input cf-input--num"
+          [ngModel]="chapterNumber()"
+          (ngModelChange)="chapterNumber.set(+$event)"
+          min="1"
+          name="chNum"
+        />
+      </div>
+      <div class="cf-field">
+        <label class="cf-label" for="chTitle">
+          Title <span class="cf-optional">optional</span>
+        </label>
+        <input
+          pInputText
+          id="chTitle"
+          class="cf-input"
+          placeholder="e.g. The Red Knight"
+          [ngModel]="chapterTitle()"
+          (ngModelChange)="chapterTitle.set($event)"
+          name="chTitle"
+        />
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="cf-error">
+        <i class="pi pi-exclamation-circle"></i> {{ error() }}
+      </div>
+    }
+
+    <!-- Custom tab bar -->
+    <div class="cf-tabs">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          class="cf-tab"
+          [class.cf-tab--active]="activeTab() === tab.id"
+          (click)="activeTab.set(tab.id)"
+        >
+          <i [class]="'pi ' + tab.icon"></i>
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
+    <!-- ── File Upload tab ───────────────────────────── -->
+    @if (activeTab() === 'file') {
+      <div class="cf-panel">
+        <div
+          class="cf-drop-zone"
+          [class.cf-drop-zone--over]="dragOver()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+          (click)="fileInputRef.nativeElement.click()"
+        >
+          <input
+            #fileInput
+            type="file"
+            accept=".pdf,.epub,.docx,.txt"
+            class="cf-file-input"
+            (change)="onFileChange($event)"
+          />
+
+          @if (selectedFile()) {
+            <div class="cf-file-selected" (click)="$event.stopPropagation()">
+              <i class="pi pi-file cf-file-icon"></i>
+              <div class="cf-file-info">
+                <span class="cf-file-name">{{ selectedFile()!.name }}</span>
+                <span class="cf-file-size">{{ (selectedFile()!.size / 1024 / 1024).toFixed(2) }} MB</span>
+              </div>
+              <button type="button" class="cf-file-clear" (click)="clearFile()" title="Remove file">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+          } @else {
+            <i class="pi pi-cloud-upload cf-drop-icon"></i>
+            <p class="cf-drop-text">Drop a file or click to browse</p>
+            <span class="cf-drop-formats">PDF · EPUB · DOCX · TXT · up to 50 MB</span>
+          }
+        </div>
+
+        <div class="cf-submit">
+          <button
+            class="btn-primary"
+            type="button"
+            (click)="uploadFile()"
+            [disabled]="submitting() || !selectedFile()"
+          >
+            @if (submitting()) {
+              <i class="pi pi-spin pi-spinner"></i> Uploading…
+            } @else {
+              <i class="pi pi-upload"></i> Upload File
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ── Paste Text tab ───────────────────────────── -->
+    @if (activeTab() === 'text') {
+      <div class="cf-panel">
+        <textarea
+          pTextarea
+          id="chText"
+          class="cf-textarea cf-textarea--source"
+          placeholder="Paste the full chapter text here…"
+          rows="18"
+          [ngModel]="chapterText()"
+          (ngModelChange)="chapterText.set($event)"
+          name="chText"
+        ></textarea>
+        <div class="cf-submit">
+          <button
+            class="btn-primary"
+            type="button"
+            (click)="submitText()"
+            [disabled]="submitting()"
+          >
+            @if (submitting()) {
+              <i class="pi pi-spin pi-spinner"></i> Processing…
+            } @else {
+              <i class="pi pi-check"></i> Submit Text
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ── JSON tab ──────────────────────────────────── -->
+    @if (activeTab() === 'json') {
+      <div class="cf-panel">
+        <p class="cf-json-hint">
+          Submit a JSON object with a <code>chapterText</code> field, or paste raw text — it will be wrapped automatically.
+        </p>
+        <textarea
+          pTextarea
+          id="chJson"
+          class="cf-textarea cf-textarea--mono"
+          placeholder='{ "chapterText": "Once upon a time…" }'
+          rows="16"
+          [ngModel]="chapterJson()"
+          (ngModelChange)="chapterJson.set($event)"
+          name="chJson"
+        ></textarea>
+        <div class="cf-submit">
+          <button
+            class="btn-primary"
+            type="button"
+            (click)="submitJson()"
+            [disabled]="submitting()"
+          >
+            @if (submitting()) {
+              <i class="pi pi-spin pi-spinner"></i> Processing…
+            } @else {
+              <i class="pi pi-check"></i> Submit JSON
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+  }
+</div>

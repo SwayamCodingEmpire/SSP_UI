@@ -1,0 +1,119 @@
+@use 'styles/mixins' as *;
+
+.char-card {
+  @include card-base;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  transition: border-color var(--t-normal), box-shadow var(--t-normal), transform var(--t-spring);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  // Left accent by role
+  border-left: 3px solid transparent;
+  &--protagonist { border-left-color: var(--amber); }
+  &--antagonist  { border-left-color: var(--crimson); }
+  &--supporting  { border-left-color: var(--slate-blue); }
+  &--minor       { border-left-color: var(--dust); }
+}
+
+.char-header {
+  @include flex-between;
+}
+
+.char-debut {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--dust);
+}
+
+.char-names { display: flex; flex-direction: column; gap: 2px; }
+
+.char-original {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--parchment);
+  letter-spacing: var(--tracking-tight);
+  @include truncate;
+}
+
+.char-translated {
+  font-size: var(--text-sm);
+  color: var(--mist);
+  @include truncate;
+}
+
+// Aliases — italic manuscript annotations, amber-tinted
+.char-aliases {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.char-aliases-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--dust);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-right: var(--sp-1);
+  padding-top: 1px; // optical align with baseline of alias tags
+}
+
+.alias-tag {
+  font-family: var(--font-reading);
+  font-style: italic;
+  font-size: var(--text-xs);
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--sp-2);
+  white-space: nowrap;
+
+  // Subtle separator between stacked aliases — em dash feel
+  & + & { position: relative; }
+}
+
+.char-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.trait-tag {
+  font-size: var(--text-xs);
+  color: var(--dust);
+  background: var(--ink-600);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-faint);
+  letter-spacing: var(--tracking-wide);
+  text-transform: lowercase;
+}
+
+.char-voice {
+  font-family: var(--font-reading);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--mist);
+  line-height: var(--leading-relaxed);
+  @include line-clamp(3);
+  border-left: 2px solid var(--amber-dim);
+  padding-left: var(--sp-3);
+  margin-top: auto;
+
+  i {
+    font-size: 0.5rem;
+    color: var(--amber-dim);
+    vertical-align: super;
+    margin-right: 4px;
+  }
+}

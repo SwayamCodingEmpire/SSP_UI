@@ -1,0 +1,48 @@
+<article class="project-card" [routerLink]="['/projects', project().id]" role="link" tabindex="0">
+  <!-- Top meta row -->
+  <div class="card-top">
+    <div class="card-badges">
+      <app-status-badge [status]="project().status" size="sm" />
+      <app-language-pair [source]="project().sourceLanguage" [target]="project().targetLanguage" size="sm" />
+    </div>
+    <div class="card-actions">
+      <button class="icon-btn" (click)="onEdit($event)" title="Edit project" aria-label="Edit project">
+        <i class="pi pi-pencil"></i>
+      </button>
+      <button class="icon-btn icon-btn--danger" (click)="onDelete($event)" title="Delete project" aria-label="Delete project">
+        <i class="pi pi-trash"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <h3 class="card-title">{{ project().title }}</h3>
+
+  <!-- Description -->
+  @if (project().description) {
+    <p class="card-desc">{{ project().description }}</p>
+  }
+
+  <!-- Style guide snippet -->
+  @if (project().translationStyle) {
+    <p class="card-style">"{{ project().translationStyle }}"</p>
+  }
+
+  <!-- Stats -->
+  <div class="card-stats">
+    <span class="stat">
+      <i class="pi pi-book"></i>
+      {{ project().chapterCount }} chapters
+    </span>
+    <span class="stat">
+      <i class="pi pi-users"></i>
+      {{ project().characterCount }} characters
+    </span>
+  </div>
+
+  <!-- Footer -->
+  <div class="card-footer">
+    <span class="card-time">Updated {{ project().updatedAt | date:'MMM d' }}</span>
+    <i class="pi pi-arrow-right card-arrow"></i>
+  </div>
+</article>

@@ -1,0 +1,26 @@
+<nav class="mobile-nav" aria-label="Mobile navigation">
+  <a class="mnav-item" routerLink="/" routerLinkActive="mnav-item--active" [routerLinkActiveOptions]="{ exact: true }">
+    <i class="pi pi-th-large"></i>
+    <span>Home</span>
+  </a>
+
+  <a class="mnav-item" routerLink="/projects" routerLinkActive="mnav-item--active">
+    <i class="pi pi-folder"></i>
+    <span>Projects</span>
+  </a>
+
+  <!-- Center FAB -->
+  <a class="mnav-fab" routerLink="/projects/new" aria-label="New Project">
+    <i class="pi pi-plus"></i>
+  </a>
+
+  <a class="mnav-item" routerLink="/compare" routerLinkActive="mnav-item--active">
+    <i class="pi pi-columns"></i>
+    <span>Compare</span>
+  </a>
+
+  <a class="mnav-item" routerLink="/projects" routerLinkActive="mnav-item--active">
+    <i class="pi pi-list"></i>
+    <span>Projects</span>
+  </a>
+</nav>

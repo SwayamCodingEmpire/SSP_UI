@@ -1,0 +1,96 @@
+@if (projectResource.isLoading()) {
+  <div class="pw-loader">
+    <app-ssp-loader size="md" label="Loading project…" />
+  </div>
+} @else if (projectResource.error()) {
+  <div class="pw-error animate-fade-in-up">
+    <i class="pi pi-exclamation-triangle"></i>
+    Project not found or failed to load.
+    <a routerLink="/" class="pw-back">← Back to projects</a>
+  </div>
+} @else if (projectResource.value(); as project) {
+  <div class="pw-page animate-fade-in-up">
+    <app-page-header
+      [title]="project.title"
+      [breadcrumbs]="breadcrumbs()"
+    >
+      <a class="btn-ghost" [routerLink]="['/projects', project.id, 'edit']">
+        <i class="pi pi-pencil"></i> Edit
+      </a>
+      <button class="btn-danger" (click)="deleteProject()">
+        <i class="pi pi-trash"></i>
+      </button>
+    </app-page-header>
+
+    <!-- Project meta banner -->
+    <div class="pw-meta">
+      <app-status-badge [status]="project.status" />
+      <app-language-pair [source]="project.sourceLanguage" [target]="project.targetLanguage" />
+      <span class="pw-meta-stat">
+        <i class="pi pi-book"></i> {{ project.chapterCount }} chapters
+      </span>
+      <span class="pw-meta-stat">
+        <i class="pi pi-users"></i> {{ project.characterCount }} characters
+      </span>
+      <span class="pw-meta-date">
+        Updated {{ project.updatedAt | date:'mediumDate' }}
+      </span>
+    </div>
+
+    @if (project.description) {
+      <p class="pw-description">{{ project.description }}</p>
+    }
+
+    @if (project.translationStyle) {
+      <div class="pw-style-guide">
+        <span class="pw-style-label">Style Guide</span>
+        <p class="pw-style-text">{{ project.translationStyle }}</p>
+      </div>
+    }
+
+    <!-- Quick actions -->
+    <div class="pw-quick-actions">
+      <a class="qa-btn qa-btn--primary" [routerLink]="['/projects', project.id, 'chapters', 'new']">
+        <i class="pi pi-upload"></i> Add Chapter
+      </a>
+      <a class="qa-btn" [routerLink]="['/projects', project.id, 'characters']">
+        <i class="pi pi-users"></i> Characters
+      </a>
+      <a class="qa-btn" [routerLink]="['/projects', project.id, 'scenes']">
+        <i class="pi pi-list"></i> Scenes
+      </a>
+    </div>
+
+    <!-- Chapters -->
+    <section class="pw-section">
+      <h2 class="pw-section-title">Chapters</h2>
+
+      @if (chaptersResource.isLoading()) {
+        <app-ssp-loader size="sm" />
+      } @else if (!chaptersResource.value()?.length) {
+        <app-empty-state
+          icon="pi pi-file-edit"
+          title="No chapters yet"
+          description="Upload your first chapter to start the translation pipeline."
+        />
+      } @else {
+        <div class="pw-chapters">
+          @for (chapter of chaptersResource.value(); track chapter.chapterId) {
+            <a
+              class="chapter-row"
+              [routerLink]="['/projects', project.id, 'chapters', chapter.chapterId]"
+            >
+              <span class="chapter-num">Ch. {{ chapter.chapterNumber }}</span>
+              <span class="chapter-title">{{ chapter.title || 'Untitled' }}</span>
+              <app-status-badge [status]="chapter.status" />
+              @if (chapter.translationStatus) {
+                <app-status-badge [status]="chapter.translationStatus" />
+              }
+              <i class="pi pi-chevron-right chapter-arrow"></i>
+            </a>
+          }
+        </div>
+      }
+    </section>
+  </div>
+}
