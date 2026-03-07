@@ -273,14 +273,31 @@
                   <div class="stage-empty">
                     <i class="pi pi-exclamation-triangle stage-empty-icon stage-empty-icon--error"></i>
                     <p class="cw-inline-error">{{ analysisError() }}</p>
-                    <p-button label="Retry Analysis" icon="pi pi-refresh" severity="secondary" size="small" [disabled]="analysisLoading()" (onClick)="runAnalysis()" />
+                    <button class="cw-run-btn cw-run-btn--amber cw-run-btn--sm" [disabled]="analysisLoading()" (click)="runAnalysis()">
+                      @if (analysisLoading()) {
+                        <i class="pi pi-spin pi-spinner"></i>
+                        <span>Retrying…</span>
+                      } @else {
+                        <i class="pi pi-refresh"></i>
+                        <span>Retry Analysis</span>
+                      }
+                    </button>
                   </div>
                 } @else {
                   @if (!autoMode()) {
                     <div class="stage-empty">
                       <i class="pi pi-search stage-empty-icon"></i>
                       <p class="stage-empty-text">Extract characters, scenes, and narrative structure from the source text.</p>
-                      <p-button label="Run Analysis" icon="pi pi-play" size="small" (onClick)="runAnalysis()" />
+                      <button class="cw-run-btn cw-run-btn--amber" [disabled]="analysisLoading()" (click)="runAnalysis()">
+                        @if (analysisLoading()) {
+                          <i class="pi pi-spin pi-spinner"></i>
+                          <span>Starting…</span>
+                        } @else {
+                          <i class="pi pi-search"></i>
+                          <span>Run Analysis</span>
+                          <i class="pi pi-arrow-right cw-run-btn-arrow"></i>
+                        }
+                      </button>
                     </div>
                   } @else {
                     <div class="stage-empty">

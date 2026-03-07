@@ -819,12 +819,34 @@
 
   &:active:not(:disabled) { transform: translateY(0); }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   i { font-size: 0.9rem; }
+
+  // Amber variant — for Analysis (matches analysis panel accent)
+  &--amber {
+    border-color: var(--amber-border);
+    background: var(--amber-dim);
+    color: var(--amber);
+
+    &::before {
+      background: linear-gradient(90deg, transparent 0%, rgba(212,168,83,0.1) 50%, transparent 100%);
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--amber);
+      color: var(--ink-900);
+      border-color: var(--amber);
+      box-shadow: 0 4px 20px rgba(212, 168, 83, 0.3);
+    }
+  }
+
+  // Smaller variant for error/retry states
+  &--sm {
+    padding: var(--sp-2) var(--sp-5);
+    font-size: var(--text-xs);
+    max-width: 200px;
+  }
 }
 
 .cw-run-btn-arrow {
