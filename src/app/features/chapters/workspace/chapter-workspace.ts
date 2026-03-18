@@ -1,16 +1,20 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { UpperCasePipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, catchError, of } from 'rxjs';
-import { SelectButton } from 'primeng/selectbutton';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
+import { Select } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ChapterService } from '../../../core/services/chapter.service';
 import { AnalysisService } from '../../../core/services/analysis.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { LanguageService } from '../../../core/services/language.service';
+import { ProjectService } from '../../../core/services/project.service';
 import { AnalysisResult } from '../../../core/models/analysis.model';
-import { TranslationTextResponse, TranslationProvider } from '../../../core/models/translation.model';
+import { ChapterTranslationResponse, LanguageTranslationSummary, TranslationProvider } from '../../../core/models/translation.model';
+import { isRtlLanguage, languageDisplayLabel } from '../../../core/constants/languages.constants';
 import { PageHeader, Breadcrumb } from '../../../shared/components/page-header';
 import { SspLoader } from '../../../shared/components/ssp-loader';
 import { StatusBadge } from '../../../shared/components/status-badge';
@@ -32,12 +36,13 @@ const PROVIDER_OPTIONS: { label: string; value: TranslationProvider }[] = [
   { label: 'Anthropic', value: 'anthropic' },
 ];
 
+
 @Component({
   selector: 'app-chapter-workspace',
   standalone: true,
   imports: [
-    RouterLink, FormsModule,
-    SelectButton, Button, Tag,
+    RouterLink, FormsModule, UpperCasePipe,
+    Button, Tag, Select,
     PageHeader, SspLoader, StatusBadge, AsyncPulse, SegmentProgress, TensionBar,
   ],
   templateUrl: './chapter-workspace.html',
@@ -47,6 +52,8 @@ export class ChapterWorkspace {
   private chapterService = inject(ChapterService);
   private analysisService = inject(AnalysisService);
   private translationService = inject(TranslationService);
+  private languageService = inject(LanguageService);
+  private projectService = inject(ProjectService);
 
   readonly id = input.required<string>();
   readonly chapterId = input.required<string>();
@@ -94,12 +101,43 @@ export class ChapterWorkspace {
   readonly analysisLoading = signal(false);
   readonly analysisError = signal('');
 
+  // ── Language state ───────────────────────────────────────
+  /** All languages that have existing translations for this chapter */
+  readonly existingLanguages = signal<LanguageTranslationSummary[]>([]);
+  /** The currently viewed language tab (code, e.g. "en") */
+  readonly activeLanguage = signal<string | null>(null);
+
+  /** Project resource — used to read targetLanguage as the default translation language */
+  private readonly numericProjectId = computed(() => Number(this.id()));
+  private readonly projectResource = rxResource({
+    params: () => this.numericProjectId(),
+    stream: ({ params: pid }) => this.projectService.getById(pid),
+  });
+
+  /** The language chosen in the new-translation picker.
+   *  Defaults to the project's targetLanguage once it loads, then falls back to 'en'. */
+  readonly selectedNewLanguage = signal<string>('en');
+
+  readonly languagesResource = rxResource({
+    stream: () => this.languageService.getOptions(),
+  });
+
+  readonly languageOptions = computed(() =>
+    this.languagesResource.value() ?? []
+  );
+
   // ── Translation state ────────────────────────────────────
-  readonly translationResult = signal<TranslationTextResponse | null>(null);
+  /** Per-language translation results, keyed by BCP-47 code */
+  readonly translationsByLang = signal<Record<string, ChapterTranslationResponse>>({});
   readonly translationLoading = signal(false);
   readonly translationError = signal('');
   readonly providerOptions = PROVIDER_OPTIONS;
   readonly selectedProvider = signal<TranslationProvider>('openai');
+
+  readonly activeTranslation = computed<ChapterTranslationResponse | null>(() => {
+    const lang = this.activeLanguage();
+    return lang ? (this.translationsByLang()[lang] ?? null) : null;
+  });
 
   // ── Review / edit state ──────────────────────────────────
   readonly editMode = signal(false);
@@ -109,7 +147,7 @@ export class ChapterWorkspace {
   readonly viewMode = signal<'final' | 'ai'>('final');
 
   readonly reviewState = computed<'pending' | 'accepted' | 'edited' | null>(() => {
-    const r = this.translationResult();
+    const r = this.activeTranslation();
     if (!r) return null;
     if (r.userAccepted === true) return 'accepted';
     if (r.userAccepted === false && r.userEditedText) return 'edited';
@@ -117,19 +155,19 @@ export class ChapterWorkspace {
   });
 
   readonly finalText = computed(() => {
-    const r = this.translationResult();
+    const r = this.activeTranslation();
     return r ? (r.userEditedText ?? r.translatedText) : '';
   });
 
   readonly displayText = computed(() => {
-    const r = this.translationResult();
+    const r = this.activeTranslation();
     if (!r) return '';
     if (this.reviewState() === 'edited' && this.viewMode() === 'ai') return r.translatedText;
     return r.userEditedText ?? r.translatedText;
   });
 
   readonly reviewedAtFormatted = computed(() => {
-    const d = this.translationResult()?.reviewedAt;
+    const d = this.activeTranslation()?.reviewedAt;
     if (!d) return '';
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   });
@@ -144,45 +182,59 @@ export class ChapterWorkspace {
 
   readonly translationStageStatus = computed<'idle' | 'running' | 'done' | 'failed'>(() => {
     if (this.translationLoading()) return 'running';
-    if (this.translationResult()) return 'done';
+    if (this.existingLanguages().length > 0) return 'done';
     if (this.translationError()) return 'failed';
     return 'idle';
   });
 
   readonly copied = signal(false);
+  readonly langPickerOpen = signal(false);
+
+  readonly languageLabel = languageDisplayLabel;
+  readonly isRtl = isRtlLanguage;
+
+  readonly activeIsRtl = computed(() => {
+    const lang = this.activeLanguage();
+    return lang ? isRtlLanguage(lang) : false;
+  });
 
   private analysisInitDone = false;
   private translationInitDone = false;
 
   constructor() {
+    // Apply project's targetLanguage as the default translation language (one-shot)
+    effect(() => {
+      const project = this.projectResource.value();
+      if (project?.targetLanguage && this.selectedNewLanguage() === 'en') {
+        this.selectedNewLanguage.set(project.targetLanguage);
+      }
+    });
+
     effect(() => {
       const chapter = this.chapterResource.value();
       if (!chapter) return;
 
       if (!this.analysisInitDone) {
         this.analysisInitDone = true;
-        // Always load — chapter may already be analyzed regardless of current status.
-        // Only allow auto-triggering when the chapter text is ready (PARSED).
         void this.loadAnalysisStatus(chapter.status === 'PARSED');
       }
 
       if (!this.translationInitDone) {
         this.translationInitDone = true;
-        void this.loadTranslationStatus();
+        void this.loadLanguages();
       }
     });
 
-    // Persist pipeline mode preference across sessions
     effect(() => {
       localStorage.setItem(ChapterWorkspace.AUTO_MODE_KEY, String(this.autoMode()));
     });
 
-    // Auto-chain when switching to auto mode with analysis already done
+    // Auto-chain: after analysis done, translate into project's default language if no translations exist
     effect(() => {
       if (
         this.autoMode() &&
         this.analysisResult() &&
-        !this.translationResult() &&
+        this.existingLanguages().length === 0 &&
         !this.translationLoading()
       ) {
         void this.autoChainTranslation();
@@ -206,13 +258,8 @@ export class ChapterWorkspace {
     this.setPanelState(id, current === 'expanded' ? 'normal' : 'expanded');
   }
 
-  hidePanel(id: PanelId) {
-    this.setPanelState(id, 'hidden');
-  }
-
-  showPanel(id: PanelId) {
-    this.setPanelState(id, 'normal');
-  }
+  hidePanel(id: PanelId) { this.setPanelState(id, 'hidden'); }
+  showPanel(id: PanelId) { this.setPanelState(id, 'normal'); }
 
   // ── Drag-and-drop methods ─────────────────────────────────
 
@@ -223,9 +270,7 @@ export class ChapterWorkspace {
   }
 
   onDragEnter(id: PanelId) {
-    if (this.dragging() && this.dragging() !== id) {
-      this.dragOverPanel.set(id);
-    }
+    if (this.dragging() && this.dragging() !== id) this.dragOverPanel.set(id);
   }
 
   onDragOver(event: DragEvent) {
@@ -243,11 +288,7 @@ export class ChapterWorkspace {
   onDrop(event: DragEvent, targetId: PanelId) {
     event.preventDefault();
     const sourceId = this.dragging();
-    if (!sourceId || sourceId === targetId) {
-      this.dragging.set(null);
-      this.dragOverPanel.set(null);
-      return;
-    }
+    if (!sourceId || sourceId === targetId) { this.dragging.set(null); this.dragOverPanel.set(null); return; }
     this.panelOrder.update(order => {
       const arr = [...order];
       const fromIdx = arr.indexOf(sourceId);
@@ -260,10 +301,7 @@ export class ChapterWorkspace {
     this.dragOverPanel.set(null);
   }
 
-  onDragEnd() {
-    this.dragging.set(null);
-    this.dragOverPanel.set(null);
-  }
+  onDragEnd() { this.dragging.set(null); this.dragOverPanel.set(null); }
 
   // ── Analysis ─────────────────────────────────────────────
 
@@ -275,33 +313,25 @@ export class ChapterWorkspace {
 
     if (result?.status === 'ANALYZED') {
       this.analysisResult.set(result);
-      if (this.autoMode()) void this.autoChainTranslation();
     } else if (result?.status === 'ANALYZING') {
       this.analysisLoading.set(true);
       this.pollAnalysis(cid);
     } else if (result?.status === 'FAILED') {
       this.analysisError.set('Analysis failed.');
-    } else {
-      // PENDING or no record — only trigger when chapter text is ready
-      if (this.autoMode() && canTrigger) {
-        this.analysisLoading.set(true);
-        try {
-          await firstValueFrom(this.analysisService.trigger(cid));
-          this.pollAnalysis(cid);
-        } catch {
-          this.analysisLoading.set(false);
-          this.analysisError.set('Failed to start analysis.');
-        }
+    } else if (this.autoMode() && canTrigger) {
+      this.analysisLoading.set(true);
+      try {
+        await firstValueFrom(this.analysisService.trigger(cid));
+        this.pollAnalysis(cid);
+      } catch {
+        this.analysisLoading.set(false);
+        this.analysisError.set('Failed to start analysis.');
       }
     }
   }
 
   private pollAnalysis(cid: number, attempt = 0) {
-    if (attempt > 60) {
-      this.analysisLoading.set(false);
-      this.analysisError.set('Analysis timed out.');
-      return;
-    }
+    if (attempt > 60) { this.analysisLoading.set(false); this.analysisError.set('Analysis timed out.'); return; }
     setTimeout(async () => {
       const result = await firstValueFrom(
         this.analysisService.getStatus(cid).pipe(catchError(() => of(null))),
@@ -309,7 +339,6 @@ export class ChapterWorkspace {
       if (result?.status === 'ANALYZED') {
         this.analysisResult.set(result);
         this.analysisLoading.set(false);
-        if (this.autoMode()) void this.autoChainTranslation();
       } else if (result?.status === 'FAILED') {
         this.analysisLoading.set(false);
         this.analysisError.set('Analysis failed.');
@@ -333,31 +362,68 @@ export class ChapterWorkspace {
     }
   }
 
-  // ── Translation ──────────────────────────────────────────
+  // ── Language / Translation ────────────────────────────────
 
-  private async loadTranslationStatus() {
+  /** Load all existing language translations from /languages, then load text for active one */
+  private async loadLanguages() {
     const cid = this.numericChapterId();
-    const status = await firstValueFrom(
-      this.translationService.getStatus(cid).pipe(catchError(() => of(null))),
+    const result = await firstValueFrom(
+      this.translationService.getLanguages(cid).pipe(catchError(() => of(null))),
     );
-    if (status?.status === 'COMPLETED' || status?.status === 'PARTIAL') {
-      const text = await firstValueFrom(
-        this.translationService.getText(cid).pipe(catchError(() => of(null))),
-      );
-      if (text) this.translationResult.set(text);
-    } else if (status?.status === 'TRANSLATING') {
-      this.translationLoading.set(true);
-      this.pollTranslation(cid);
+    if (result && result.translations.length > 0) {
+      this.existingLanguages.set(result.translations);
+      // Activate the first (most recent / most advanced) language
+      const firstLang = result.translations[0].targetLanguage;
+      this.activeLanguage.set(firstLang);
+      await this.loadTranslationText(firstLang);
+      // If any are still translating, start polling
+      for (const t of result.translations) {
+        if (t.translationStatus === 'TRANSLATING') {
+          this.translationLoading.set(true);
+          this.pollTranslation(cid, t.targetLanguage);
+        }
+      }
     }
   }
 
+  /** Load the text for a given language tab */
+  private async loadTranslationText(lang: string) {
+    const cid = this.numericChapterId();
+    const text = await firstValueFrom(
+      this.translationService.getText(cid, lang).pipe(catchError(() => of(null))),
+    );
+    if (text) {
+      this.translationsByLang.update(map => ({ ...map, [lang]: text }));
+    }
+  }
+
+  /** Switch the active language tab; lazy-load text if not yet fetched */
+  async selectLanguageTab(lang: string) {
+    this.activeLanguage.set(lang);
+    this.editMode.set(false);
+    this.viewMode.set('final');
+    if (!this.translationsByLang()[lang]) {
+      await this.loadTranslationText(lang);
+    }
+  }
+
+  /** Start a brand-new translation in a new language */
   async triggerTranslation() {
     const cid = this.numericChapterId();
+    const lang = this.selectedNewLanguage();
     this.translationLoading.set(true);
     this.translationError.set('');
     try {
-      await firstValueFrom(this.translationService.trigger(cid, this.selectedProvider()));
-      this.pollTranslation(cid);
+      await firstValueFrom(this.translationService.trigger(cid, lang, this.selectedProvider()));
+      // Optimistically add to tabs
+      const now = new Date().toISOString();
+      this.existingLanguages.update(list => {
+        const exists = list.some(t => t.targetLanguage === lang);
+        if (exists) return list.map(t => t.targetLanguage === lang ? { ...t, translationStatus: 'TRANSLATING' } : t);
+        return [...list, { targetLanguage: lang, translationStatus: 'TRANSLATING', userAccepted: null, updatedAt: now }];
+      });
+      this.activeLanguage.set(lang);
+      this.pollTranslation(cid, lang);
     } catch {
       this.translationError.set('Failed to start translation. Try again.');
       this.translationLoading.set(false);
@@ -365,48 +431,46 @@ export class ChapterWorkspace {
   }
 
   private async autoChainTranslation() {
-    if (this.translationResult() || this.translationLoading()) return;
-
-    // Always check the server status first — concurrent calls from loadAnalysisStatus()
-    // and loadTranslationStatus() can race, so never rely solely on local signal state.
+    if (this.existingLanguages().length > 0 || this.translationLoading()) return;
     const cid = this.numericChapterId();
-    const status = await firstValueFrom(
-      this.translationService.getStatus(cid).pipe(catchError(() => of(null))),
+    const defaultLang = this.selectedNewLanguage();
+    // Check server to avoid duplicate trigger
+    const langs = await firstValueFrom(
+      this.translationService.getLanguages(cid).pipe(catchError(() => of(null))),
     );
-
-    if (status?.status === 'COMPLETED' || status?.status === 'PARTIAL') {
-      // Already translated — load the text, do NOT re-trigger
-      const text = await firstValueFrom(
-        this.translationService.getText(cid).pipe(catchError(() => of(null))),
-      );
-      if (text) this.translationResult.set(text);
+    if (langs && langs.translations.length > 0) {
+      this.existingLanguages.set(langs.translations);
+      const firstLang = langs.translations[0].targetLanguage;
+      this.activeLanguage.set(firstLang);
+      await this.loadTranslationText(firstLang);
+      for (const t of langs.translations) {
+        if (t.translationStatus === 'TRANSLATING') {
+          this.translationLoading.set(true);
+          this.pollTranslation(cid, t.targetLanguage);
+        }
+      }
       return;
     }
-
-    if (status?.status === 'TRANSLATING') {
-      this.translationLoading.set(true);
-      this.pollTranslation(cid);
-      return;
-    }
-
-    // Not translated yet — safe to trigger
+    // No translations yet — trigger with default language
     await this.triggerTranslation();
+    if (!this.activeLanguage()) this.activeLanguage.set(defaultLang);
   }
 
-  private pollTranslation(cid: number, attempt = 0) {
+  private pollTranslation(cid: number, lang: string, attempt = 0) {
     if (attempt > 90) { this.translationLoading.set(false); return; }
     setTimeout(async () => {
       const status = await firstValueFrom(
-        this.translationService.getStatus(cid).pipe(catchError(() => of(null))),
+        this.translationService.getStatus(cid, lang).pipe(catchError(() => of(null))),
       );
-      if (status?.status === 'COMPLETED' || status?.status === 'PARTIAL') {
-        const text = await firstValueFrom(
-          this.translationService.getText(cid).pipe(catchError(() => of(null))),
+      if (status?.status === 'COMPLETED' || status?.status === 'PARTIAL' || status?.status === 'AI_TRANSLATED') {
+        await this.loadTranslationText(lang);
+        // Update existingLanguages status
+        this.existingLanguages.update(list =>
+          list.map(t => t.targetLanguage === lang ? { ...t, translationStatus: status.status } : t)
         );
-        if (text) this.translationResult.set(text);
         this.translationLoading.set(false);
       } else {
-        this.pollTranslation(cid, attempt + 1);
+        this.pollTranslation(cid, lang, attempt + 1);
       }
     }, 4000);
   }
@@ -427,13 +491,19 @@ export class ChapterWorkspace {
   }
 
   async acceptTranslation() {
+    const lang = this.activeLanguage();
+    if (!lang) return;
     const cid = this.numericChapterId();
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await firstValueFrom(this.translationService.save(cid, { accepted: true }));
-      const current = this.translationResult()!;
-      this.translationResult.set({ ...current, userAccepted: true, userEditedText: null });
+      const updated = await firstValueFrom(
+        this.translationService.save(cid, { targetLanguage: lang, accepted: true }),
+      );
+      this.translationsByLang.update(map => ({ ...map, [lang]: updated }));
+      this.existingLanguages.update(list =>
+        list.map(t => t.targetLanguage === lang ? { ...t, userAccepted: true } : t)
+      );
     } catch {
       this.saveError.set('Failed to save. Try again.');
     } finally {
@@ -444,15 +514,16 @@ export class ChapterWorkspace {
   async submitEdit() {
     const text = this.editText().trim();
     if (!text) return;
+    const lang = this.activeLanguage();
+    if (!lang) return;
     const cid = this.numericChapterId();
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await firstValueFrom(
-        this.translationService.save(cid, { accepted: false, editedText: text }),
+      const updated = await firstValueFrom(
+        this.translationService.save(cid, { targetLanguage: lang, accepted: false, editedText: text }),
       );
-      const current = this.translationResult()!;
-      this.translationResult.set({ ...current, userAccepted: false, userEditedText: text });
+      this.translationsByLang.update(map => ({ ...map, [lang]: updated }));
       this.editMode.set(false);
     } catch {
       this.saveError.set('Failed to save. Try again.');
@@ -472,13 +543,13 @@ export class ChapterWorkspace {
   }
 
   downloadTranslation() {
-    const result = this.translationResult();
+    const result = this.activeTranslation();
     if (!result) return;
     const blob = new Blob([this.finalText()], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `chapter-${result.chapterNumber}-translation.txt`;
+    a.download = `chapter-${result.chapterNumber}-${result.targetLanguage}-translation.txt`;
     a.click();
     URL.revokeObjectURL(url);
   }

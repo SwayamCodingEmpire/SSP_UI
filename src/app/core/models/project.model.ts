@@ -8,7 +8,7 @@ export interface Project {
   id: number;
   title: string;
   sourceLanguage: string;
-  targetLanguage: string;
+  targetLanguage: string | null;
   status: ProjectStatus;
   description: string;
   originalFileName: string | null;
@@ -23,7 +23,7 @@ export interface Project {
 export interface CreateProjectRequest {
   title: string;
   sourceLanguage: string;
-  targetLanguage: string;
+  targetLanguage?: string;
   description: string;
   translationStyle: string;
 }

@@ -61,35 +61,142 @@
       </a>
     </div>
 
-    <!-- Chapters -->
+    <!-- ── Chapters ──────────────────────────────────────── -->
     <section class="pw-section">
-      <h2 class="pw-section-title">Chapters</h2>
 
-      @if (chaptersResource.isLoading()) {
-        <app-ssp-loader size="sm" />
-      } @else if (!chaptersResource.value()?.length) {
-        <app-empty-state
-          icon="pi pi-file-edit"
-          title="No chapters yet"
-          description="Upload your first chapter to start the translation pipeline."
-        />
-      } @else {
-        <div class="pw-chapters">
-          @for (chapter of chaptersResource.value(); track chapter.chapterId) {
-            <a
-              class="chapter-row"
-              [routerLink]="['/projects', project.id, 'chapters', chapter.chapterId]"
-            >
-              <span class="chapter-num">Ch. {{ chapter.chapterNumber }}</span>
-              <span class="chapter-title">{{ chapter.title || 'Untitled' }}</span>
-              <app-status-badge [status]="chapter.status" />
-              @if (chapter.translationStatus) {
-                <app-status-badge [status]="chapter.translationStatus" />
-              }
-              <i class="pi pi-chevron-right chapter-arrow"></i>
-            </a>
+      <!-- Section header: title + language switcher -->
+      <div class="pw-section-head">
+        <h2 class="pw-section-title">Chapters</h2>
+
+        <div class="pw-lang-switcher">
+          <button
+            class="pw-lang-all-btn"
+            [class.pw-lang-all-btn--active]="selectedLanguage() === null"
+            (click)="selectedLanguage.set(null)"
+            title="Show all chapters"
+          >
+            <i class="pi pi-list"></i> All
+          </button>
+          <p-select
+            [options]="languageOptions()"
+            optionLabel="label"
+            optionValue="code"
+            [ngModel]="selectedLanguage()"
+            (ngModelChange)="selectedLanguage.set($event)"
+            placeholder="View by language…"
+            styleClass="pw-lang-select"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Search languages…"
+          />
+        </div>
+      </div>
+
+      <!-- ── Per-language progress bar ─────────────────── -->
+      @if (selectedLanguage()) {
+        <div class="pw-lang-header">
+          <div class="pw-lang-label">
+            <i class="pi pi-language"></i>
+            {{ langDisplayLabel(selectedLanguage()!) }}
+          </div>
+          @if (langViewProgress(); as prog) {
+            <div class="pw-lang-progress">
+              <div class="pw-lang-progress-bar">
+                <div class="pw-lang-progress-fill" [style.width.%]="prog.pct"></div>
+              </div>
+              <span class="pw-lang-progress-text">{{ prog.done }} / {{ prog.total }} translated</span>
+            </div>
           }
         </div>
+      }
+
+      <!-- ── Chapter list ───────────────────────────────── -->
+      @if (chaptersResource.isLoading() || langViewResource.isLoading()) {
+        <app-ssp-loader size="sm" />
+      } @else if (selectedLanguage() === null) {
+
+        <!-- Default view: coarse status from /chapters -->
+        @if (!chaptersResource.value()?.length) {
+          <app-empty-state
+            icon="pi pi-file-edit"
+            title="No chapters yet"
+            description="Upload your first chapter to start the translation pipeline."
+          />
+        } @else {
+          <div class="pw-chapters">
+            @for (chapter of chaptersResource.value(); track chapter.chapterId) {
+              <a
+                class="chapter-row"
+                [routerLink]="['/projects', project.id, 'chapters', chapter.chapterId]"
+              >
+                <span class="chapter-num">Ch. {{ chapter.chapterNumber }}</span>
+                <span class="chapter-title">{{ chapter.title || 'Untitled' }}</span>
+                <div class="chapter-badges">
+                  <app-status-badge [status]="chapter.status" />
+                  @if (chapter.translationStatus) {
+                    <app-status-badge [status]="chapter.translationStatus" />
+                  }
+                </div>
+                <i class="pi pi-chevron-right chapter-arrow"></i>
+              </a>
+            }
+          </div>
+        }
+
+      } @else {
+
+        <!-- Per-language view: from /chapters/translations?targetLanguage=xx -->
+        @if (!langViewResource.value()?.length) {
+          <app-empty-state
+            icon="pi pi-language"
+            title="No chapters found"
+            description="No chapter data available for this language."
+          />
+        } @else {
+          <div class="pw-chapters">
+            @for (chapter of langViewResource.value(); track chapter.chapterId) {
+              <div class="chapter-row chapter-row--lang">
+
+                <!-- Left: nav to chapter workspace -->
+                <a
+                  class="chapter-row-link"
+                  [routerLink]="['/projects', project.id, 'chapters', chapter.chapterId]"
+                >
+                  <span class="chapter-num">Ch. {{ chapter.chapterNumber }}</span>
+                  <span class="chapter-title">{{ chapter.title || 'Untitled' }}</span>
+                </a>
+
+                <!-- Right: translation status + action -->
+                <div class="chapter-lang-status">
+                  @if (chapter.translationStatus) {
+                    <app-status-badge [status]="chapter.translationStatus" />
+                    @if (chapter.userAccepted === true) {
+                      <span class="chapter-accepted-badge"><i class="pi pi-check-circle"></i> Accepted</span>
+                    } @else if (chapter.userAccepted === false) {
+                      <span class="chapter-edited-badge"><i class="pi pi-pencil"></i> Revised</span>
+                    }
+                  } @else {
+                    <span class="chapter-not-translated">Not translated</span>
+                    <button
+                      class="chapter-translate-btn"
+                      [disabled]="isTranslating(chapter.chapterId)"
+                      (click)="triggerChapterTranslation(chapter)"
+                    >
+                      @if (isTranslating(chapter.chapterId)) {
+                        <i class="pi pi-spin pi-spinner"></i> Starting…
+                      } @else {
+                        <i class="pi pi-language"></i> Translate
+                      }
+                    </button>
+                  }
+                </div>
+
+                <i class="pi pi-chevron-right chapter-arrow"></i>
+              </div>
+            }
+          </div>
+        }
+
       }
     </section>
   </div>

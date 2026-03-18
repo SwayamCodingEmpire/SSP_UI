@@ -1138,3 +1138,182 @@
   color: var(--dust);
   letter-spacing: var(--tracking-wide);
 }
+
+// ── Language tab bar ──────────────────────────────────────
+.lang-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--ink-800);
+  border-bottom: 1px solid var(--border-faint);
+  flex-shrink: 0;
+  overflow-x: auto;
+  @include scrollbar-thin;
+}
+
+.lang-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lang-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 5px var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--dust);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+
+  &:hover:not(.lang-tab--active) {
+    background: var(--ink-600);
+    border-color: var(--border-subtle);
+    color: var(--mist);
+  }
+
+  &--active {
+    background: var(--sage-dim);
+    border-color: var(--sage-border);
+    color: var(--sage);
+    cursor: default;
+  }
+
+  &--loading {
+    color: var(--amber);
+    border-color: var(--amber-border);
+    background: var(--amber-dim);
+  }
+}
+
+.lang-tab-code { line-height: 1; }
+
+.lang-tab-spinner {
+  font-size: 0.6rem;
+  color: var(--amber);
+}
+
+.lang-tab-check {
+  font-size: 0.6rem;
+  color: var(--sage);
+}
+
+.lang-tab-edited {
+  font-size: 0.6rem;
+  color: var(--amber);
+}
+
+// ── Add-language button ───────────────────────────────────
+.lang-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-default);
+  background: transparent;
+  color: var(--dust);
+  font-size: 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--t-fast);
+
+  &:hover {
+    border-color: var(--sage-border);
+    color: var(--sage);
+    background: var(--sage-dim);
+    border-style: solid;
+  }
+}
+
+// ── Add-language inline popover ───────────────────────────
+.lang-picker-popover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--ink-800);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  animation: slideDown 0.15s var(--ease-out);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lang-picker-label {
+  font-size: var(--text-xs);
+  color: var(--mist);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: 600;
+}
+
+.lang-picker-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.lang-picker-providers {
+  display: flex;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.provider-chip {
+  padding: 4px var(--sp-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--dust);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+
+  &:hover:not(.provider-chip--active) {
+    border-color: var(--border-default);
+    color: var(--mist);
+  }
+
+  &--active {
+    background: var(--slate-dim);
+    border-color: var(--slate-blue);
+    color: var(--slate-blue);
+    cursor: default;
+  }
+}
+
+// ── Target language selector (first-translate CTA) ────────
+.cw-lang-selector {
+  width: 100%;
+  max-width: 320px;
+
+  .cw-lang-select {
+    width: 100%;
+  }
+}
+
+// Lang picker select inside popover
+.lang-picker-select {
+  min-width: 200px;
+}

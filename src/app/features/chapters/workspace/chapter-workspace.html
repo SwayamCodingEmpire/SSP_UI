@@ -71,7 +71,11 @@
         <div class="node-meta">
           <span class="node-label">Translation</span>
           <span class="node-status" [class.node-status--active]="translationStageStatus() === 'running'" [class.node-status--done]="translationStageStatus() === 'done'">
-            @switch (translationStageStatus()) { @case ('running') { Translating… } @case ('done') { Complete } @default { Waiting } }
+            @switch (translationStageStatus()) {
+              @case ('running') { Translating… }
+              @case ('done')    { {{ existingLanguages().length }} language{{ existingLanguages().length !== 1 ? 's' : '' }} }
+              @default          { Waiting }
+            }
           </span>
         </div>
       </div>
@@ -134,7 +138,7 @@
             <!-- ── NORMAL / EXPANDED: full panel ──────────── -->
             <header class="stage-head">
 
-              <!-- Drag handle — only this element is draggable -->
+              <!-- Drag handle -->
               <div
                 class="drag-handle"
                 draggable="true"
@@ -187,7 +191,7 @@
                           <button class="cw-view-btn" [class.cw-view-btn--active]="viewMode() === 'ai'"    (click)="viewMode.set('ai')">AI draft</button>
                         </div>
                       }
-                      @if (translationResult() && !editMode()) {
+                      @if (activeTranslation() && !editMode()) {
                         <div class="cw-panel-actions">
                           <p-button [icon]="copied() ? 'pi pi-check' : 'pi pi-copy'" [title]="copied() ? 'Copied!' : 'Copy'" severity="secondary" [text]="true" size="small" (onClick)="copyTranslation()" />
                           <p-button icon="pi pi-download" title="Download .txt" severity="secondary" [text]="true" size="small" (onClick)="downloadTranslation()" />
@@ -198,7 +202,7 @@
                 }
               }
 
-              <!-- Universal panel controls (appear on hover) -->
+              <!-- Universal panel controls -->
               <div class="panel-controls">
                 <button class="panel-ctrl" [class.panel-ctrl--on]="panelStates()[panelId] === 'expanded'" [title]="panelStates()[panelId] === 'expanded' ? 'Restore size' : 'Expand'" (click)="toggleExpand(panelId)">
                   <i [class]="panelStates()[panelId] === 'expanded' ? 'pi pi-compress' : 'pi pi-expand'"></i>
@@ -274,13 +278,8 @@
                     <i class="pi pi-exclamation-triangle stage-empty-icon stage-empty-icon--error"></i>
                     <p class="cw-inline-error">{{ analysisError() }}</p>
                     <button class="cw-run-btn cw-run-btn--amber cw-run-btn--sm" [disabled]="analysisLoading()" (click)="runAnalysis()">
-                      @if (analysisLoading()) {
-                        <i class="pi pi-spin pi-spinner"></i>
-                        <span>Retrying…</span>
-                      } @else {
-                        <i class="pi pi-refresh"></i>
-                        <span>Retry Analysis</span>
-                      }
+                      @if (analysisLoading()) { <i class="pi pi-spin pi-spinner"></i><span>Retrying…</span> }
+                      @else { <i class="pi pi-refresh"></i><span>Retry Analysis</span> }
                     </button>
                   </div>
                 } @else {
@@ -289,14 +288,8 @@
                       <i class="pi pi-search stage-empty-icon"></i>
                       <p class="stage-empty-text">Extract characters, scenes, and narrative structure from the source text.</p>
                       <button class="cw-run-btn cw-run-btn--amber" [disabled]="analysisLoading()" (click)="runAnalysis()">
-                        @if (analysisLoading()) {
-                          <i class="pi pi-spin pi-spinner"></i>
-                          <span>Starting…</span>
-                        } @else {
-                          <i class="pi pi-search"></i>
-                          <span>Run Analysis</span>
-                          <i class="pi pi-arrow-right cw-run-btn-arrow"></i>
-                        }
+                        @if (analysisLoading()) { <i class="pi pi-spin pi-spinner"></i><span>Starting…</span> }
+                        @else { <i class="pi pi-search"></i><span>Run Analysis</span><i class="pi pi-arrow-right cw-run-btn-arrow"></i> }
                       </button>
                     </div>
                   } @else {
@@ -311,29 +304,112 @@
 
             <!-- ── TRANSLATION body + review dock ─────── -->
             @if (panelId === 'translation') {
+
+              @if (existingLanguages().length > 0) {
+                <!-- ── Language tabs (outside scrollable body) ── -->
+                <div class="lang-tab-bar">
+                  <div class="lang-tabs" role="tablist">
+                    @for (langMeta of existingLanguages(); track langMeta.targetLanguage) {
+                      <button
+                        class="lang-tab"
+                        role="tab"
+                        [class.lang-tab--active]="activeLanguage() === langMeta.targetLanguage"
+                        [class.lang-tab--loading]="langMeta.translationStatus === 'TRANSLATING'"
+                        [attr.aria-selected]="activeLanguage() === langMeta.targetLanguage"
+                        (click)="selectLanguageTab(langMeta.targetLanguage)"
+                        [title]="languageLabel(langMeta.targetLanguage)"
+                      >
+                        <span class="lang-tab-code">{{ langMeta.targetLanguage | uppercase }}</span>
+                        @if (langMeta.translationStatus === 'TRANSLATING') {
+                          <i class="pi pi-spin pi-spinner lang-tab-spinner"></i>
+                        } @else if (langMeta.userAccepted === true) {
+                          <i class="pi pi-check-circle lang-tab-check"></i>
+                        } @else if (langMeta.userAccepted === false) {
+                          <i class="pi pi-pencil lang-tab-edited"></i>
+                        }
+                      </button>
+                    }
+                  </div>
+                  <button class="lang-add-btn" title="Translate to another language" (click)="langPickerOpen.set(!langPickerOpen())">
+                    <i class="pi pi-plus"></i>
+                  </button>
+                </div>
+
+                <!-- ── Add-language inline panel ─────────── -->
+                @if (langPickerOpen()) {
+                  <div class="lang-picker-popover">
+                    <p class="lang-picker-label">Add language</p>
+                    <div class="lang-picker-row">
+                      <p-select
+                        [options]="languageOptions()"
+                        optionLabel="label"
+                        optionValue="code"
+                        [ngModel]="selectedNewLanguage()"
+                        (ngModelChange)="selectedNewLanguage.set($event)"
+                        styleClass="lang-picker-select"
+                        placeholder="Select language"
+                        [filter]="true"
+                        filterPlaceholder="Search…"
+                      />
+                      <div class="lang-picker-providers">
+                        @for (opt of providerOptions; track opt.value) {
+                          <button
+                            class="provider-chip"
+                            [class.provider-chip--active]="selectedProvider() === opt.value"
+                            (click)="selectedProvider.set(opt.value)"
+                          >{{ opt.label }}</button>
+                        }
+                      </div>
+                      <button
+                        class="cw-run-btn cw-run-btn--sm"
+                        [disabled]="translationLoading()"
+                        (click)="triggerTranslation(); langPickerOpen.set(false)"
+                      >
+                        @if (translationLoading()) { <i class="pi pi-spin pi-spinner"></i> Translating… }
+                        @else { <i class="pi pi-language"></i> Translate }
+                      </button>
+                    </div>
+                    @if (translationError()) { <p class="cw-inline-error">{{ translationError() }}</p> }
+                  </div>
+                }
+              }
+
               <div class="stage-body" [class.stage-body--edit]="editMode()">
-                @if (translationLoading() && !translationResult()) {
+
+                @if (translationLoading() && existingLanguages().length === 0) {
                   <div class="stage-empty"><app-ssp-loader size="sm" label="Translating chapter…" /></div>
 
-                } @else if (translationResult(); as translation) {
-                  @if (!editMode()) {
-                    @if (translation.chunked && (translation.totalSegments ?? 0) > 0) {
-                      <app-segment-progress [current]="translation.translatedSegments ?? 0" [total]="translation.totalSegments ?? 0" />
-                    }
-                    @if (reviewState() === 'edited' && viewMode() === 'ai') {
-                      <div class="cw-ai-draft-notice"><i class="pi pi-robot"></i> Original AI output — not the final version</div>
-                      <p class="cw-text cw-text--ai-draft">{{ displayText() }}</p>
-                    } @else {
-                      @if (reviewState() === 'edited') {
-                        <div class="cw-final-notice"><i class="pi pi-user-edit"></i> Your revision — canonical version</div>
+                } @else if (existingLanguages().length > 0) {
+
+                  <!-- ── Translation content for active tab ── -->
+                  @if (activeTranslation(); as translation) {
+                    @if (!editMode()) {
+                      @if (translation.chunked && (translation.totalSegments ?? 0) > 0) {
+                        <app-segment-progress [current]="translation.translatedSegments ?? 0" [total]="translation.totalSegments ?? 0" />
                       }
-                      <p class="cw-text cw-text--translated">{{ displayText() }}</p>
+                      @if (reviewState() === 'edited' && viewMode() === 'ai') {
+                        <div class="cw-ai-draft-notice"><i class="pi pi-robot"></i> Original AI output — not the final version</div>
+                        <p class="cw-text cw-text--ai-draft" [attr.dir]="activeIsRtl() ? 'rtl' : null">{{ displayText() }}</p>
+                      } @else {
+                        @if (reviewState() === 'edited') {
+                          <div class="cw-final-notice"><i class="pi pi-user-edit"></i> Your revision — canonical version</div>
+                        }
+                        <p class="cw-text cw-text--translated" [attr.dir]="activeIsRtl() ? 'rtl' : null">{{ displayText() }}</p>
+                      }
+                    } @else {
+                      <textarea class="cw-edit-textarea" [ngModel]="editText()" (ngModelChange)="editText.set($event)" placeholder="Edit the translation…" spellcheck="true" [attr.dir]="activeIsRtl() ? 'rtl' : null"></textarea>
                     }
+                  } @else if (existingLanguages().some(l => l.targetLanguage === activeLanguage() && l.translationStatus === 'TRANSLATING')) {
+                    <div class="stage-empty"><app-ssp-loader size="sm" label="Translating…" /></div>
                   } @else {
-                    <textarea class="cw-edit-textarea" [ngModel]="editText()" (ngModelChange)="editText.set($event)" placeholder="Edit the translation…" spellcheck="true"></textarea>
+                    <div class="stage-empty">
+                      <i class="pi pi-language stage-empty-icon"></i>
+                      <p class="stage-empty-text">Select a language tab above to view its translation.</p>
+                    </div>
                   }
 
                 } @else {
+                  <!-- ── No translations yet ─────────────── -->
                   @if (!autoMode() && analysisResult()) {
                     <div class="stage-empty">
                       <i class="pi pi-language stage-empty-icon"></i>
@@ -346,9 +422,7 @@
                           [class.cw-provider-card--active]="selectedProvider() === 'openai'"
                           (click)="selectedProvider.set('openai')"
                         >
-                          @if (selectedProvider() === 'openai') {
-                            <i class="pi pi-check-circle cw-provider-check"></i>
-                          }
+                          @if (selectedProvider() === 'openai') { <i class="pi pi-check-circle cw-provider-check"></i> }
                           <span class="cw-provider-card-logo">GPT</span>
                           <span class="cw-provider-card-name">OpenAI</span>
                           <span class="cw-provider-card-model">GPT-4o</span>
@@ -358,31 +432,33 @@
                           [class.cw-provider-card--active]="selectedProvider() === 'anthropic'"
                           (click)="selectedProvider.set('anthropic')"
                         >
-                          @if (selectedProvider() === 'anthropic') {
-                            <i class="pi pi-check-circle cw-provider-check"></i>
-                          }
+                          @if (selectedProvider() === 'anthropic') { <i class="pi pi-check-circle cw-provider-check"></i> }
                           <span class="cw-provider-card-logo">CL</span>
                           <span class="cw-provider-card-name">Anthropic</span>
                           <span class="cw-provider-card-model">Claude</span>
                         </button>
                       </div>
 
+                      <!-- Language selector -->
+                      <div class="cw-lang-selector">
+                        <p-select
+                          [options]="languageOptions()"
+                          optionLabel="label"
+                          optionValue="code"
+                          [ngModel]="selectedNewLanguage()"
+                          (ngModelChange)="selectedNewLanguage.set($event)"
+                          styleClass="cw-lang-select"
+                          placeholder="Target language"
+                          [filter]="true"
+                          filterPlaceholder="Search languages…"
+                        />
+                      </div>
+
                       @if (translationError()) { <p class="cw-inline-error">{{ translationError() }}</p> }
 
-                      <!-- Run button -->
-                      <button
-                        class="cw-run-btn"
-                        [disabled]="translationLoading()"
-                        (click)="triggerTranslation()"
-                      >
-                        @if (translationLoading()) {
-                          <i class="pi pi-spin pi-spinner"></i>
-                          <span>Starting…</span>
-                        } @else {
-                          <i class="pi pi-language"></i>
-                          <span>Run Translation</span>
-                          <i class="pi pi-arrow-right cw-run-btn-arrow"></i>
-                        }
+                      <button class="cw-run-btn" [disabled]="translationLoading()" (click)="triggerTranslation()">
+                        @if (translationLoading()) { <i class="pi pi-spin pi-spinner"></i><span>Starting…</span> }
+                        @else { <i class="pi pi-language"></i><span>Run Translation</span><i class="pi pi-arrow-right cw-run-btn-arrow"></i> }
                       </button>
                     </div>
                   } @else if (!autoMode() && !analysisResult()) {
@@ -400,7 +476,7 @@
               </div>
 
               <!-- Review dock -->
-              @if (translationResult()) {
+              @if (activeTranslation()) {
                 @if (editMode()) {
                   <div class="cw-review-bar cw-review-bar--editing">
                     @if (saveError()) { <span class="cw-review-error"><i class="pi pi-exclamation-circle"></i> {{ saveError() }}</span> }

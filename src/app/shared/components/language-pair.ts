@@ -15,9 +15,12 @@ const LANG_NAMES: Record<string, string> = {
 })
 export class LanguagePair {
   readonly source = input.required<string>();
-  readonly target = input.required<string>();
+  readonly target = input<string | null>(null);
   readonly size   = input<'sm' | 'md'>('md');
 
   readonly srcLabel = computed(() => LANG_NAMES[this.source().toLowerCase()] ?? this.source().toUpperCase());
-  readonly tgtLabel = computed(() => LANG_NAMES[this.target().toLowerCase()] ?? this.target().toUpperCase());
+  readonly tgtLabel = computed(() => {
+    const t = this.target();
+    return t ? (LANG_NAMES[t.toLowerCase()] ?? t.toUpperCase()) : null;
+  });
 }

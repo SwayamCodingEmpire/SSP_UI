@@ -29,10 +29,10 @@
 
       <div class="pf-row">
         <div class="pf-field">
-          <label class="pf-label" for="srcLang">Source Language</label>
+          <label class="pf-label" for="srcLang">Source Language <span class="req">*</span></label>
           <p-select
             inputId="srcLang"
-            [options]="languages"
+            [options]="languages()"
             optionLabel="label"
             optionValue="code"
             [ngModel]="sourceLanguage()"
@@ -40,21 +40,29 @@
             name="srcLang"
             styleClass="pf-select"
             placeholder="Select language"
+            [filter]="true"
+            filterPlaceholder="Search languages…"
           />
         </div>
 
         <div class="pf-field">
-          <label class="pf-label" for="tgtLang">Target Language</label>
+          <label class="pf-label" for="tgtLang">
+            Default Translation Language
+            <span class="pf-hint">Pre-fills the language picker when translating chapters</span>
+          </label>
           <p-select
             inputId="tgtLang"
-            [options]="languages"
+            [options]="languages()"
             optionLabel="label"
             optionValue="code"
             [ngModel]="targetLanguage()"
             (ngModelChange)="targetLanguage.set($event)"
             name="tgtLang"
             styleClass="pf-select"
-            placeholder="Select language"
+            placeholder="Optional"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Search languages…"
           />
         </div>
       </div>

@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { API_ENDPOINTS } from '../constants/api.constants';
 import {
   ChapterProcessingResponse,
+  ChapterLanguageProgress,
   SubmitChapterJsonRequest,
 } from '../models/chapter.model';
 
@@ -13,6 +14,14 @@ export class ChapterService {
   getByProject(projectId: number) {
     return this.http.get<ChapterProcessingResponse[]>(
       API_ENDPOINTS.chapters.listByProject(projectId),
+    );
+  }
+
+  /** §7 — per-chapter translation progress for one language */
+  getTranslationsByLanguage(projectId: number, targetLanguage: string) {
+    const params = new HttpParams().set('targetLanguage', targetLanguage);
+    return this.http.get<ChapterLanguageProgress[]>(
+      API_ENDPOINTS.chapters.translationsByLanguage(projectId), { params },
     );
   }
 

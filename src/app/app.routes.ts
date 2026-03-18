@@ -15,6 +15,13 @@ export const routes: Routes = [
       import('./features/compare/compare-workspace').then(m => m.CompareWorkspace),
   },
 
+  // Language browse
+  {
+    path: 'browse',
+    loadComponent: () =>
+      import('./features/browse/language-browse').then(m => m.LanguageBrowse),
+  },
+
   // Project create / edit
   {
     path: 'projects/new',

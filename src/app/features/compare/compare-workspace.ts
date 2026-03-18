@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
@@ -13,6 +14,8 @@ import { Select } from 'primeng/select';
 import { ProjectService } from '../../core/services/project.service';
 import { ChapterService } from '../../core/services/chapter.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { LanguageService } from '../../core/services/language.service';
+import { isRtlLanguage } from '../../core/constants/languages.constants';
 import { SspLoader } from '../../shared/components/ssp-loader';
 
 type PanelKey = 'source' | 'ai' | 'user';
@@ -31,21 +34,29 @@ const PANEL_META: Record<PanelKey, { title: string; icon: string; tag: string }>
   styleUrl: './compare-workspace.scss',
 })
 export class CompareWorkspace {
-  private projectService   = inject(ProjectService);
-  private chapterService   = inject(ChapterService);
+  private projectService     = inject(ProjectService);
+  private chapterService     = inject(ChapterService);
   private translationService = inject(TranslationService);
+  private languageService    = inject(LanguageService);
 
   @ViewChild('panelsContainer') panelsContainerRef?: ElementRef<HTMLDivElement>;
 
   readonly panelMeta = PANEL_META;
 
-  // ── Chapter picker ──────────────────────────────────────
+  // ── Chapter + language picker ────────────────────────────
   readonly compareProjectId = signal<string>('');
   readonly compareChapterId = signal<string>('');
+  readonly compareLanguage  = signal<string>('');
 
   setProject(id: string) {
     this.compareProjectId.set(id);
     this.compareChapterId.set('');
+    this.compareLanguage.set('');
+  }
+
+  setChapter(id: string) {
+    this.compareChapterId.set(id);
+    this.compareLanguage.set(''); // auto-set once languages load
   }
 
   // ── Resources ───────────────────────────────────────────
@@ -69,13 +80,38 @@ export class CompareWorkspace {
     stream: ({ params: cid }) => this.chapterService.getById(cid),
   });
 
-  readonly translationResource = rxResource({
+  /** Languages that have translations for the selected chapter */
+  readonly chapterLanguagesResource = rxResource({
     params: () => {
       const id = Number(this.compareChapterId());
       return id > 0 ? id : undefined;
     },
     stream: ({ params: cid }) =>
-      this.translationService.getText(cid).pipe(catchError(() => of(null))),
+      this.translationService.getLanguages(cid).pipe(catchError(() => of(null))),
+  });
+
+  /** Auto-select first available language when chapter languages load */
+  private readonly _autoSelectLang = effect(() => {
+    const langs = this.chapterLanguagesResource.value();
+    if (!langs?.translations.length) return;
+    if (!this.compareLanguage()) {
+      this.compareLanguage.set(langs.translations[0].targetLanguage);
+    }
+  });
+
+  readonly translationResource = rxResource({
+    params: () => {
+      const cid  = Number(this.compareChapterId());
+      const lang = this.compareLanguage();
+      return cid > 0 && lang ? { cid, lang } : undefined;
+    },
+    stream: ({ params: { cid, lang } }) =>
+      this.translationService.getText(cid, lang).pipe(catchError(() => of(null))),
+  });
+
+  /** Live language options fetched from the API */
+  readonly languageOptionsResource = rxResource({
+    stream: () => this.languageService.getOptions(),
   });
 
   // ── Selector options ────────────────────────────────────
@@ -91,6 +127,23 @@ export class CompareWorkspace {
       label: `Ch. ${c.chapterNumber}${c.title ? ' — ' + c.title : ''}`,
       value: String(c.chapterId),
     }))
+  );
+
+  readonly chapterLanguageOptions = computed(() => {
+    const langs   = this.chapterLanguagesResource.value();
+    const allOpts = this.languageOptionsResource.value() ?? [];
+    if (!langs?.translations.length) return [];
+    return langs.translations.map(t => {
+      const opt = allOpts.find(o => o.code === t.targetLanguage);
+      return {
+        label: opt ? opt.label : t.targetLanguage.toUpperCase(),
+        value: t.targetLanguage,
+      };
+    });
+  });
+
+  readonly hasChapterLanguages = computed(() =>
+    (this.chapterLanguagesResource.value()?.translations.length ?? 0) > 0
   );
 
   // ── Text values ─────────────────────────────────────────
@@ -116,9 +169,13 @@ export class CompareWorkspace {
     !!this.translationResource.value()
   );
 
+  readonly translationIsRtl = computed(() =>
+    isRtlLanguage(this.compareLanguage())
+  );
+
   // ── Panel visibility ────────────────────────────────────
-  readonly showSource     = signal(true);
-  readonly showAiDraft    = signal(true);
+  readonly showSource      = signal(true);
+  readonly showAiDraft     = signal(true);
   readonly showUserVersion = signal(true);
 
   readonly visibleCount = computed(() =>
@@ -132,13 +189,12 @@ export class CompareWorkspace {
       user:   this.showUserVersion(),
     };
     const next = { ...vis, [key]: !vis[key] };
-    if (!Object.values(next).some(Boolean)) return; // keep ≥ 1
+    if (!Object.values(next).some(Boolean)) return;
 
     if (key === 'source') this.showSource.set(next.source);
     else if (key === 'ai') this.showAiDraft.set(next.ai);
     else this.showUserVersion.set(next.user);
 
-    // Redistribute weights evenly among newly-visible panels
     const visKeys = (['source', 'ai', 'user'] as PanelKey[]).filter(k => next[k]);
     const w = 100 / visKeys.length;
     this.panelWeights.update(prev => {
@@ -168,7 +224,6 @@ export class CompareWorkspace {
     };
   });
 
-  /** Which panel immediately follows 'source' in the visible order? */
   nextAfterSource(): PanelKey {
     return this.showAiDraft() ? 'ai' : 'user';
   }

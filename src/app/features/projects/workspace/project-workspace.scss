@@ -120,13 +120,116 @@
   margin-top: var(--sp-8);
 }
 
+.pw-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+
 .pw-section-title {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 600;
   color: var(--parchment);
-  margin-bottom: var(--sp-4);
   letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+// Language switcher
+.pw-lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.pw-lang-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--ink-700);
+  color: var(--dust);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t-fast);
+
+  i { font-size: 0.7rem; }
+
+  &:hover:not(&--active) {
+    border-color: var(--border-default);
+    color: var(--mist);
+  }
+
+  &--active {
+    background: var(--amber-dim);
+    border-color: var(--amber-border);
+    color: var(--amber);
+    cursor: default;
+  }
+}
+
+// Per-language header bar (label + progress)
+.pw-lang-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--ink-800);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.pw-lang-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--parchment);
+  white-space: nowrap;
+
+  i { color: var(--sage); font-size: 0.8rem; }
+}
+
+.pw-lang-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 160px;
+}
+
+.pw-lang-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border-faint);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pw-lang-progress-fill {
+  height: 100%;
+  background: var(--sage);
+  border-radius: 2px;
+  transition: width var(--t-slow);
+}
+
+.pw-lang-progress-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--mist);
+  white-space: nowrap;
+  letter-spacing: var(--tracking-wide);
 }
 
 .pw-chapters {
@@ -155,6 +258,98 @@
     flex-wrap: wrap;
     gap: var(--sp-2);
   }
+
+  // Per-language row variant (div, not anchor — contains both a link and a button)
+  &--lang {
+    cursor: default;
+
+    &:hover {
+      border-color: var(--border-subtle);
+      background: var(--ink-700);
+    }
+  }
+}
+
+// Inner link portion of lang row
+.chapter-row-link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 1;
+  text-decoration: none;
+  min-width: 0;
+
+  &:hover .chapter-title { color: var(--amber); }
+  &:hover .chapter-num   { color: var(--amber); }
+}
+
+.chapter-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+// Right side of lang row
+.chapter-lang-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.chapter-not-translated {
+  font-size: var(--text-xs);
+  color: var(--dust);
+  font-style: italic;
+}
+
+.chapter-translate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px var(--sp-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--sage-border);
+  background: var(--sage-dim);
+  color: var(--sage);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t-fast);
+
+  i { font-size: 0.7rem; }
+
+  &:hover:not(:disabled) {
+    background: var(--sage);
+    color: var(--ink-900);
+    border-color: var(--sage);
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.chapter-accepted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--sage);
+  letter-spacing: var(--tracking-wide);
+  i { font-size: 0.65rem; }
+}
+
+.chapter-edited-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: var(--tracking-wide);
+  i { font-size: 0.65rem; }
 }
 
 .chapter-num {

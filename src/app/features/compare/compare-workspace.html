@@ -8,7 +8,7 @@
       <span class="cmp-brand-label">Compare</span>
     </div>
 
-    <!-- Chapter picker -->
+    <!-- Chapter + language picker -->
     <div class="cmp-selector-row">
       <p-select
         [options]="projectOptions()"
@@ -19,12 +19,14 @@
         placeholder="Project…"
         [loading]="projectsResource.isLoading()"
         styleClass="cmp-select"
+        [filter]="true"
+        filterPlaceholder="Search…"
       />
       <i class="pi pi-angle-right cmp-selector-arrow"></i>
       <p-select
         [options]="chapterOptions()"
         [ngModel]="compareChapterId()"
-        (ngModelChange)="compareChapterId.set($event)"
+        (ngModelChange)="setChapter($event)"
         optionLabel="label"
         optionValue="value"
         placeholder="Chapter…"
@@ -32,6 +34,22 @@
         [loading]="chaptersResource.isLoading()"
         styleClass="cmp-select"
       />
+      @if (chapterLanguagesResource.isLoading()) {
+        <i class="pi pi-spin pi-spinner cmp-selector-arrow"></i>
+      } @else if (hasChapterLanguages()) {
+        <i class="pi pi-angle-right cmp-selector-arrow"></i>
+        <p-select
+          [options]="chapterLanguageOptions()"
+          [ngModel]="compareLanguage()"
+          (ngModelChange)="compareLanguage.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Language…"
+          styleClass="cmp-select cmp-select--lang"
+          [filter]="true"
+          filterPlaceholder="Search…"
+        />
+      }
     </div>
 
     <!-- Panel toggles -->
@@ -135,15 +153,20 @@
               <i class="pi pi-robot cmp-empty-icon"></i>
               <p>Select a project and chapter above</p>
             </div>
+          } @else if (!compareLanguage()) {
+            <div class="cmp-empty">
+              <i class="pi pi-language cmp-empty-icon"></i>
+              <p>No translations available for this chapter yet</p>
+            </div>
           } @else if (translationResource.isLoading()) {
             <app-ssp-loader size="sm" label="Loading translation…" />
           } @else if (!hasTranslation()) {
             <div class="cmp-empty">
               <i class="pi pi-language cmp-empty-icon"></i>
-              <p>No translation available for this chapter</p>
+              <p>No translation available for this language</p>
             </div>
           } @else {
-            <p class="cmp-text cmp-text--ai">{{ aiText() }}</p>
+            <p class="cmp-text cmp-text--ai" [attr.dir]="translationIsRtl() ? 'rtl' : null">{{ aiText() }}</p>
           }
         </div>
       </section>
@@ -177,12 +200,17 @@
               <i class="pi pi-user-edit cmp-empty-icon"></i>
               <p>Select a project and chapter above</p>
             </div>
+          } @else if (!compareLanguage()) {
+            <div class="cmp-empty">
+              <i class="pi pi-language cmp-empty-icon"></i>
+              <p>No translations available for this chapter yet</p>
+            </div>
           } @else if (translationResource.isLoading()) {
             <app-ssp-loader size="sm" label="Loading translation…" />
           } @else if (!hasTranslation()) {
             <div class="cmp-empty">
               <i class="pi pi-language cmp-empty-icon"></i>
-              <p>No translation available for this chapter</p>
+              <p>No translation available for this language</p>
             </div>
           } @else {
             @if (!hasUserRevision()) {
@@ -191,7 +219,7 @@
                 No revision yet — showing AI output
               </div>
             }
-            <p class="cmp-text cmp-text--user">{{ userText() }}</p>
+            <p class="cmp-text cmp-text--user" [attr.dir]="translationIsRtl() ? 'rtl' : null">{{ userText() }}</p>
           }
         </div>
       </section>

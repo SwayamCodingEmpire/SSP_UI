@@ -8,6 +8,7 @@ const BADGE_MAP: Record<string, { label: string; cssClass: string; pulse: boolea
   COMPLETED:    { label: 'Completed',    cssClass: 'badge--sage',    pulse: false },
   ARCHIVED:     { label: 'Archived',     cssClass: 'badge--muted',   pulse: false },
   PENDING:      { label: 'Pending',      cssClass: 'badge--muted',   pulse: false },
+  AI_TRANSLATED:{ label: 'AI Translated',cssClass: 'badge--slate',   pulse: false },
   PARSED:       { label: 'Parsed',       cssClass: 'badge--slate',   pulse: false },
   TRANSLATING:  { label: 'Translating',  cssClass: 'badge--amber',   pulse: true  },
   ANALYZING:    { label: 'Analyzing',    cssClass: 'badge--amber',   pulse: true  },

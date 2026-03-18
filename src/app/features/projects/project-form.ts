@@ -8,23 +8,9 @@ import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { ProjectService } from '../../core/services/project.service';
+import { LanguageService } from '../../core/services/language.service';
 import { PageHeader, Breadcrumb } from '../../shared/components/page-header';
 import { SspLoader } from '../../shared/components/ssp-loader';
-
-const LANGUAGES = [
-  { label: 'Japanese', code: 'ja' },
-  { label: 'English', code: 'en' },
-  { label: 'Korean', code: 'ko' },
-  { label: 'Chinese (Simplified)', code: 'zh-Hans' },
-  { label: 'Chinese (Traditional)', code: 'zh-Hant' },
-  { label: 'French', code: 'fr' },
-  { label: 'German', code: 'de' },
-  { label: 'Spanish', code: 'es' },
-  { label: 'Portuguese', code: 'pt' },
-  { label: 'Italian', code: 'it' },
-  { label: 'Russian', code: 'ru' },
-  { label: 'Arabic', code: 'ar' },
-];
 
 @Component({
   selector: 'app-project-form',
@@ -34,14 +20,23 @@ const LANGUAGES = [
   styleUrl: './project-form.scss',
 })
 export class ProjectForm {
-  private router = inject(Router);
-  private projectService = inject(ProjectService);
+  private router          = inject(Router);
+  private projectService  = inject(ProjectService);
+  private languageService = inject(LanguageService);
 
   // Route param: present on /projects/:id/edit, absent on /projects/new
   readonly id = input<string>();
 
   readonly isEditMode = computed(() => !!this.id());
-  readonly languages = LANGUAGES;
+
+  /** Live language list from API, falls back to static list */
+  readonly languagesResource = rxResource({
+    stream: () => this.languageService.getOptions(),
+  });
+
+  readonly languages = computed(() =>
+    (this.languagesResource.value() ?? []).map(l => ({ label: l.label, code: l.code }))
+  );
 
   readonly breadcrumbs = computed<Breadcrumb[]>(() => [
     { label: 'Projects', link: '/' },
@@ -60,13 +55,13 @@ export class ProjectForm {
   });
 
   // Form fields
-  readonly title = signal('');
-  readonly sourceLanguage = signal('ja');
-  readonly targetLanguage = signal('en');
-  readonly description = signal('');
-  readonly translationStyle = signal('');
-  readonly saving = signal(false);
-  readonly error = signal('');
+  readonly title             = signal('');
+  readonly sourceLanguage    = signal('ja');
+  readonly targetLanguage    = signal('en');
+  readonly description       = signal('');
+  readonly translationStyle  = signal('');
+  readonly saving            = signal(false);
+  readonly error             = signal('');
 
   constructor() {
     // Populate form when editing an existing project
@@ -75,7 +70,7 @@ export class ProjectForm {
       if (p) {
         this.title.set(p.title);
         this.sourceLanguage.set(p.sourceLanguage);
-        this.targetLanguage.set(p.targetLanguage);
+        this.targetLanguage.set(p.targetLanguage ?? '');
         this.description.set(p.description);
         this.translationStyle.set(p.translationStyle);
       }
@@ -84,10 +79,10 @@ export class ProjectForm {
 
   async save() {
     const body = {
-      title: this.title().trim(),
-      sourceLanguage: this.sourceLanguage(),
-      targetLanguage: this.targetLanguage(),
-      description: this.description().trim(),
+      title:            this.title().trim(),
+      sourceLanguage:   this.sourceLanguage(),
+      targetLanguage:   this.targetLanguage() || undefined,
+      description:      this.description().trim(),
       translationStyle: this.translationStyle().trim(),
     };
 

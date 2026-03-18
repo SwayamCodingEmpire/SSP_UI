@@ -27,9 +27,10 @@ export class Sidebar {
   });
 
   readonly mainNav: NavItem[] = [
-    { label: 'Dashboard', icon: 'pi pi-th-large', route: '/'        },
-    { label: 'Projects',  icon: 'pi pi-folder',   route: '/projects' },
+    { label: 'Dashboard', icon: 'pi pi-th-large',       route: '/'        },
+    { label: 'Projects',  icon: 'pi pi-folder',          route: '/projects' },
     { label: 'Compare',   icon: 'pi pi-objects-column',  route: '/compare'  },
+    { label: 'Browse',    icon: 'pi pi-language',        route: '/browse'   },
   ];
 
   readonly projectNav = computed<NavItem[]>(() => {

@@ -1,0 +1,139 @@
+<div class="lb-page animate-fade-in-up">
+
+  <!-- ── Page header ──────────────────────────────────── -->
+  <div class="lb-header">
+    <div class="lb-header-title">
+      <i class="pi pi-language lb-header-icon"></i>
+      <h1 class="lb-title">Browse by Language</h1>
+    </div>
+    <p class="lb-subtitle">View translation progress for any language across a project's chapters.</p>
+  </div>
+
+  <!-- ── Selectors ────────────────────────────────────── -->
+  <div class="lb-selectors">
+    <p-select
+      [options]="projectOptions()"
+      [ngModel]="selectedProjectId()"
+      (ngModelChange)="setProject($event)"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Select project…"
+      [loading]="projectsResource.isLoading()"
+      styleClass="lb-select"
+      [filter]="true"
+      filterPlaceholder="Search projects…"
+      [showClear]="true"
+    />
+
+    <p-select
+      [options]="languageOptions()"
+      [ngModel]="selectedLanguage()"
+      (ngModelChange)="selectedLanguage.set($event)"
+      optionLabel="label"
+      optionValue="code"
+      placeholder="Select language…"
+      [disabled]="!selectedProjectId()"
+      [loading]="languageOptionsResource.isLoading()"
+      styleClass="lb-select lb-select--lang"
+      [filter]="true"
+      filterPlaceholder="Search languages…"
+      [showClear]="true"
+    />
+  </div>
+
+  <!-- ── Content ──────────────────────────────────────── -->
+  @if (!selectedProjectId() || !selectedLanguage()) {
+
+    <div class="lb-splash">
+      <i class="pi pi-globe lb-splash-icon"></i>
+      <p class="lb-splash-text">
+        Select a project and language to see chapter translation progress
+      </p>
+    </div>
+
+  } @else if (chaptersResource.isLoading()) {
+
+    <app-ssp-loader size="md" label="Loading chapters…" />
+
+  } @else if (!chaptersResource.value()?.length) {
+
+    <app-empty-state
+      icon="pi pi-language"
+      title="No chapters found"
+      description="No chapter data available for this language yet."
+    />
+
+  } @else {
+
+    <!-- Context bar -->
+    <div class="lb-context-bar">
+      <div class="lb-context-info">
+        <span class="lb-context-project">
+          <i class="pi pi-folder"></i>
+          {{ selectedProject()?.title }}
+        </span>
+        <i class="pi pi-angle-right lb-context-sep"></i>
+        <span class="lb-context-lang">
+          <i class="pi pi-language"></i>
+          {{ langDisplayLabel(selectedLanguage()) }}
+        </span>
+      </div>
+
+      @if (progress(); as prog) {
+        <div class="lb-progress">
+          <div class="lb-progress-bar">
+            <div class="lb-progress-fill" [style.width.%]="prog.pct"></div>
+          </div>
+          <span class="lb-progress-text">{{ prog.done }} / {{ prog.total }} translated</span>
+          <span class="lb-progress-pct">{{ prog.pct }}%</span>
+        </div>
+      }
+    </div>
+
+    <!-- Chapter list -->
+    <div class="lb-chapters">
+      @for (chapter of chaptersResource.value(); track chapter.chapterId) {
+        <div class="lb-chapter-row">
+
+          <!-- Chapter info (links to chapter workspace) -->
+          <a
+            class="lb-chapter-link"
+            [routerLink]="['/projects', selectedProjectId(), 'chapters', chapter.chapterId]"
+          >
+            <span class="lb-chapter-num">Ch. {{ chapter.chapterNumber }}</span>
+            <span class="lb-chapter-title">{{ chapter.title || 'Untitled' }}</span>
+          </a>
+
+          <!-- Status -->
+          <div class="lb-chapter-status">
+            @if (chapter.translationStatus) {
+              <app-status-badge [status]="chapter.translationStatus" />
+              @if (chapter.userAccepted === true) {
+                <span class="lb-accepted"><i class="pi pi-check-circle"></i> Accepted</span>
+              } @else if (chapter.userAccepted === false) {
+                <span class="lb-edited"><i class="pi pi-pencil"></i> Revised</span>
+              }
+            } @else {
+              <span class="lb-not-translated">Not translated</span>
+            }
+          </div>
+
+          <!-- Compare shortcut -->
+          @if (chapter.translationStatus) {
+            <a
+              class="lb-compare-btn"
+              routerLink="/compare"
+              title="Open in Compare"
+            >
+              <i class="pi pi-objects-column"></i>
+              Compare
+            </a>
+          }
+
+        </div>
+      }
+    </div>
+
+  }
+
+</div>

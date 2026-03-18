@@ -18,19 +18,21 @@ export const API_ENDPOINTS = {
 
   // ── Chapters ────────────────────────────────────────────
   chapters: {
-    listByProject: (projectId: number) => `${API}/projects/${projectId}/chapters`,
-    upload:        `${API}/chapters/upload`,
-    processJson:   `${API}/chapters/process`,
-    processText:   `${API}/chapters/process-text`,
-    get:           (chapterId: number) => `${API}/chapters/${chapterId}`,
+    listByProject:         (projectId: number) => `${API}/projects/${projectId}/chapters`,
+    translationsByLanguage:(projectId: number) => `${API}/projects/${projectId}/chapters/translations`,
+    upload:                `${API}/chapters/upload`,
+    processJson:           `${API}/chapters/process`,
+    processText:           `${API}/chapters/process-text`,
+    get:                   (chapterId: number) => `${API}/chapters/${chapterId}`,
   },
 
   // ── Translation ─────────────────────────────────────────
   translation: {
-    trigger: (chapterId: number) => `${API}/translation/chapters/${chapterId}`,
-    status:  (chapterId: number) => `${API}/translation/chapters/${chapterId}`,
-    text:    (chapterId: number) => `${API}/translation/chapters/${chapterId}/text`,
-    save:    (chapterId: number) => `${API}/translation/chapters/${chapterId}/save`,
+    trigger:   (chapterId: number) => `${API}/translation/chapters/${chapterId}`,
+    status:    (chapterId: number) => `${API}/translation/chapters/${chapterId}`,
+    text:      (chapterId: number) => `${API}/translation/chapters/${chapterId}/text`,
+    save:      (chapterId: number) => `${API}/translation/chapters/${chapterId}/save`,
+    languages: (chapterId: number) => `${API}/translation/chapters/${chapterId}/languages`,
   },
 
   // ── Analysis ────────────────────────────────────────────
@@ -49,5 +51,11 @@ export const API_ENDPOINTS = {
 
   scenes: {
     list: (projectId: number) => `${API}/projects/${projectId}/scenes`,
+  },
+
+  // ── Languages ────────────────────────────────────────────
+  languages: {
+    list:   `${API}/languages`,
+    get:    (code: string) => `${API}/languages/${code}`,
   },
 } as const;
