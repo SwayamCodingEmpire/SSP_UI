@@ -9,7 +9,7 @@ export interface TranslationStatusResponse {
   provider: TranslationProvider;
 }
 
-/** Full translation record — returned by /text and /save */
+/** Full translation record — returned by GET /text */
 export interface ChapterTranslationResponse {
   id: number;
   chapterId: number;
@@ -28,18 +28,24 @@ export interface ChapterTranslationResponse {
   updatedAt: string;
 }
 
-/** Per-language summary item from /languages */
-export interface LanguageTranslationSummary {
+/** Leaner response from PUT /save (v2) */
+export interface ReviewResult {
+  translationId: number;
+  chapterId: number;
   targetLanguage: string;
   translationStatus: TranslationStatus;
+  translatedText: string;
+  userEditedText: string | null;
   userAccepted: boolean | null;
-  updatedAt: string;
 }
 
-/** Response from GET /api/translation/chapters/{id}/languages */
-export interface ChapterLanguagesResponse {
-  chapterId: number;
-  translations: LanguageTranslationSummary[];
+/** One item from GET /api/v2/translation/chapters/{id}/languages — flat array */
+export interface AvailableTranslation {
+  targetLanguage: string;
+  /** Plain string status (v2) */
+  status: TranslationStatus;
+  userAccepted: boolean | null;
+  updatedAt: string;
 }
 
 export interface TranslationSaveRequest {

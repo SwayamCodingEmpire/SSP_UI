@@ -93,9 +93,9 @@ export class CompareWorkspace {
   /** Auto-select first available language when chapter languages load */
   private readonly _autoSelectLang = effect(() => {
     const langs = this.chapterLanguagesResource.value();
-    if (!langs?.translations.length) return;
+    if (!langs?.length) return;
     if (!this.compareLanguage()) {
-      this.compareLanguage.set(langs.translations[0].targetLanguage);
+      this.compareLanguage.set(langs[0].targetLanguage);
     }
   });
 
@@ -125,15 +125,15 @@ export class CompareWorkspace {
   readonly chapterOptions = computed(() =>
     (this.chaptersResource.value() ?? []).map(c => ({
       label: `Ch. ${c.chapterNumber}${c.title ? ' — ' + c.title : ''}`,
-      value: String(c.chapterId),
+      value: String(c.id),
     }))
   );
 
   readonly chapterLanguageOptions = computed(() => {
     const langs   = this.chapterLanguagesResource.value();
     const allOpts = this.languageOptionsResource.value() ?? [];
-    if (!langs?.translations.length) return [];
-    return langs.translations.map(t => {
+    if (!langs?.length) return [];
+    return langs.map(t => {
       const opt = allOpts.find(o => o.code === t.targetLanguage);
       return {
         label: opt ? opt.label : t.targetLanguage.toUpperCase(),
@@ -143,14 +143,13 @@ export class CompareWorkspace {
   });
 
   readonly hasChapterLanguages = computed(() =>
-    (this.chapterLanguagesResource.value()?.translations.length ?? 0) > 0
+    (this.chapterLanguagesResource.value()?.length ?? 0) > 0
   );
 
   // ── Text values ─────────────────────────────────────────
-  readonly sourceText = computed(() => {
-    const ch = this.chapterDataResource.value();
-    return ch?.fullOriginalText ?? ch?.originalTextPreview ?? '';
-  });
+  readonly sourceText = computed(() =>
+    this.chapterDataResource.value()?.originalTextPreview ?? ''
+  );
 
   readonly aiText = computed(() =>
     this.translationResource.value()?.translatedText ?? ''

@@ -92,13 +92,13 @@
 
     <!-- Chapter list -->
     <div class="lb-chapters">
-      @for (chapter of chaptersResource.value(); track chapter.chapterId) {
+      @for (chapter of chaptersResource.value(); track chapter.id) {
         <div class="lb-chapter-row">
 
           <!-- Chapter info (links to chapter workspace) -->
           <a
             class="lb-chapter-link"
-            [routerLink]="['/projects', selectedProjectId(), 'chapters', chapter.chapterId]"
+            [routerLink]="['/projects', selectedProjectId(), 'chapters', chapter.id]"
           >
             <span class="lb-chapter-num">Ch. {{ chapter.chapterNumber }}</span>
             <span class="lb-chapter-title">{{ chapter.title || 'Untitled' }}</span>
@@ -106,11 +106,11 @@
 
           <!-- Status -->
           <div class="lb-chapter-status">
-            @if (chapter.translationStatus) {
-              <app-status-badge [status]="chapter.translationStatus" />
-              @if (chapter.userAccepted === true) {
+            @if (chapter.langStatus) {
+              <app-status-badge [status]="chapter.langStatus.status" />
+              @if (chapter.langStatus.userAccepted === true) {
                 <span class="lb-accepted"><i class="pi pi-check-circle"></i> Accepted</span>
-              } @else if (chapter.userAccepted === false) {
+              } @else if (chapter.langStatus.userAccepted === false) {
                 <span class="lb-edited"><i class="pi pi-pencil"></i> Revised</span>
               }
             } @else {
@@ -119,7 +119,7 @@
           </div>
 
           <!-- Compare shortcut -->
-          @if (chapter.translationStatus) {
+          @if (chapter.langStatus) {
             <a
               class="lb-compare-btn"
               routerLink="/compare"

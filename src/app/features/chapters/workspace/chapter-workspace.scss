@@ -1216,6 +1216,11 @@
   color: var(--amber);
 }
 
+.lang-tab-error {
+  font-size: 0.6rem;
+  color: var(--crimson);
+}
+
 // ── Add-language button ───────────────────────────────────
 .lang-add-btn {
   display: flex;

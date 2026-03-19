@@ -13,7 +13,7 @@ import { TranslationService } from '../../../core/services/translation.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { AnalysisResult } from '../../../core/models/analysis.model';
-import { ChapterTranslationResponse, LanguageTranslationSummary, TranslationProvider } from '../../../core/models/translation.model';
+import { ChapterTranslationResponse, AvailableTranslation, TranslationProvider } from '../../../core/models/translation.model';
 import { isRtlLanguage, languageDisplayLabel } from '../../../core/constants/languages.constants';
 import { PageHeader, Breadcrumb } from '../../../shared/components/page-header';
 import { SspLoader } from '../../../shared/components/ssp-loader';
@@ -103,7 +103,7 @@ export class ChapterWorkspace {
 
   // ── Language state ───────────────────────────────────────
   /** All languages that have existing translations for this chapter */
-  readonly existingLanguages = signal<LanguageTranslationSummary[]>([]);
+  readonly existingLanguages = signal<AvailableTranslation[]>([]);
   /** The currently viewed language tab (code, e.g. "en") */
   readonly activeLanguage = signal<string | null>(null);
 
@@ -367,18 +367,18 @@ export class ChapterWorkspace {
   /** Load all existing language translations from /languages, then load text for active one */
   private async loadLanguages() {
     const cid = this.numericChapterId();
-    const result = await firstValueFrom(
+    const translations = await firstValueFrom(
       this.translationService.getLanguages(cid).pipe(catchError(() => of(null))),
     );
-    if (result && result.translations.length > 0) {
-      this.existingLanguages.set(result.translations);
+    if (translations && translations.length > 0) {
+      this.existingLanguages.set(translations);
       // Activate the first (most recent / most advanced) language
-      const firstLang = result.translations[0].targetLanguage;
+      const firstLang = translations[0].targetLanguage;
       this.activeLanguage.set(firstLang);
       await this.loadTranslationText(firstLang);
-      // If any are still translating, start polling
-      for (const t of result.translations) {
-        if (t.translationStatus === 'TRANSLATING') {
+      // If any are still translating/pending, start polling
+      for (const t of translations) {
+        if (t.status === 'TRANSLATING' || t.status === 'PENDING') {
           this.translationLoading.set(true);
           this.pollTranslation(cid, t.targetLanguage);
         }
@@ -419,8 +419,8 @@ export class ChapterWorkspace {
       const now = new Date().toISOString();
       this.existingLanguages.update(list => {
         const exists = list.some(t => t.targetLanguage === lang);
-        if (exists) return list.map(t => t.targetLanguage === lang ? { ...t, translationStatus: 'TRANSLATING' } : t);
-        return [...list, { targetLanguage: lang, translationStatus: 'TRANSLATING', userAccepted: null, updatedAt: now }];
+        if (exists) return list.map(t => t.targetLanguage === lang ? { ...t, status: 'TRANSLATING' as const } : t);
+        return [...list, { targetLanguage: lang, status: 'TRANSLATING' as const, userAccepted: null, updatedAt: now }];
       });
       this.activeLanguage.set(lang);
       this.pollTranslation(cid, lang);
@@ -435,16 +435,16 @@ export class ChapterWorkspace {
     const cid = this.numericChapterId();
     const defaultLang = this.selectedNewLanguage();
     // Check server to avoid duplicate trigger
-    const langs = await firstValueFrom(
+    const translations = await firstValueFrom(
       this.translationService.getLanguages(cid).pipe(catchError(() => of(null))),
     );
-    if (langs && langs.translations.length > 0) {
-      this.existingLanguages.set(langs.translations);
-      const firstLang = langs.translations[0].targetLanguage;
+    if (translations && translations.length > 0) {
+      this.existingLanguages.set(translations);
+      const firstLang = translations[0].targetLanguage;
       this.activeLanguage.set(firstLang);
       await this.loadTranslationText(firstLang);
-      for (const t of langs.translations) {
-        if (t.translationStatus === 'TRANSLATING') {
+      for (const t of translations) {
+        if (t.status === 'TRANSLATING' || t.status === 'PENDING') {
           this.translationLoading.set(true);
           this.pollTranslation(cid, t.targetLanguage);
         }
@@ -462,13 +462,18 @@ export class ChapterWorkspace {
       const status = await firstValueFrom(
         this.translationService.getStatus(cid, lang).pipe(catchError(() => of(null))),
       );
-      if (status?.status === 'COMPLETED' || status?.status === 'PARTIAL' || status?.status === 'AI_TRANSLATED') {
+      if (status?.status === 'AI_TRANSLATED' || status?.status === 'HUMAN_REVIEWED' || status?.status === 'APPROVED') {
         await this.loadTranslationText(lang);
-        // Update existingLanguages status
         this.existingLanguages.update(list =>
-          list.map(t => t.targetLanguage === lang ? { ...t, translationStatus: status.status } : t)
+          list.map(t => t.targetLanguage === lang ? { ...t, status: status.status } : t)
         );
         this.translationLoading.set(false);
+      } else if (status?.status === 'FAILED') {
+        this.existingLanguages.update(list =>
+          list.map(t => t.targetLanguage === lang ? { ...t, status: 'FAILED' as const } : t)
+        );
+        this.translationLoading.set(false);
+        this.translationError.set('Translation failed. You can retry.');
       } else {
         this.pollTranslation(cid, lang, attempt + 1);
       }
@@ -497,10 +502,21 @@ export class ChapterWorkspace {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      const updated = await firstValueFrom(
+      const result = await firstValueFrom(
         this.translationService.save(cid, { targetLanguage: lang, accepted: true }),
       );
-      this.translationsByLang.update(map => ({ ...map, [lang]: updated }));
+      // Merge ReviewResult fields into existing ChapterTranslationResponse
+      this.translationsByLang.update(map => ({
+        ...map,
+        [lang]: {
+          ...map[lang],
+          translationStatus: result.translationStatus,
+          translatedText: result.translatedText,
+          userEditedText: result.userEditedText,
+          userAccepted: result.userAccepted,
+          reviewedAt: new Date().toISOString(),
+        },
+      }));
       this.existingLanguages.update(list =>
         list.map(t => t.targetLanguage === lang ? { ...t, userAccepted: true } : t)
       );
@@ -520,10 +536,21 @@ export class ChapterWorkspace {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      const updated = await firstValueFrom(
+      const result = await firstValueFrom(
         this.translationService.save(cid, { targetLanguage: lang, accepted: false, editedText: text }),
       );
-      this.translationsByLang.update(map => ({ ...map, [lang]: updated }));
+      // Merge ReviewResult fields into existing ChapterTranslationResponse
+      this.translationsByLang.update(map => ({
+        ...map,
+        [lang]: {
+          ...map[lang],
+          translationStatus: result.translationStatus,
+          translatedText: result.translatedText,
+          userEditedText: result.userEditedText,
+          userAccepted: result.userAccepted,
+          reviewedAt: new Date().toISOString(),
+        },
+      }));
       this.editMode.set(false);
     } catch {
       this.saveError.set('Failed to save. Try again.');

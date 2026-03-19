@@ -17,9 +17,6 @@
       [breadcrumbs]="breadcrumbs()"
     >
       <app-status-badge [status]="chapter.status" />
-      @if (chapter.translationStatus) {
-        <app-status-badge [status]="chapter.translationStatus" />
-      }
       <div class="mode-toggle" role="group" aria-label="Pipeline mode" [class.mode-toggle--manual]="!autoMode()">
         <div class="mode-toggle-slider"></div>
         <button class="mode-toggle-btn" [class.mode-toggle-btn--active]="autoMode()"  (click)="autoMode.set(true)"  title="Stages run automatically in sequence"><i class="pi pi-bolt"></i> Auto</button>
@@ -168,7 +165,7 @@
                       <app-async-pulse [active]="analysisLoading()" variant="amber" />
                     </div>
                     @if (analysisResult()) {
-                      <span class="stage-summary">{{ analysisResult()!.charactersFound }} chars &middot; {{ analysisResult()!.scenesDetected }} scenes</span>
+                      <span class="stage-summary">{{ analysisResult()!.characterCount }} chars &middot; {{ analysisResult()!.sceneCount }} scenes</span>
                     }
                   </div>
                 }
@@ -220,11 +217,8 @@
             <!-- ── SOURCE body ─────────────────────────── -->
             @if (panelId === 'source') {
               <div class="stage-body stage-body--source">
-                @if (chapter.fullOriginalText) {
-                  <p class="cw-text">{{ chapter.fullOriginalText }}</p>
-                } @else if (chapter.originalTextPreview) {
+                @if (chapter.originalTextPreview) {
                   <p class="cw-text">{{ chapter.originalTextPreview }}</p>
-                  <p class="cw-preview-note">Preview — full text not yet available</p>
                 } @else {
                   <p class="cw-muted">Source text not yet available.</p>
                 }
@@ -239,11 +233,11 @@
                 } @else if (analysisResult(); as analysis) {
                   <div class="analysis-stats">
                     <div class="analysis-stat">
-                      <span class="analysis-stat-val">{{ analysis.charactersFound }}</span>
+                      <span class="analysis-stat-val">{{ analysis.characterCount }}</span>
                       <span class="analysis-stat-key">Characters</span>
                     </div>
                     <div class="analysis-stat">
-                      <span class="analysis-stat-val">{{ analysis.scenesDetected }}</span>
+                      <span class="analysis-stat-val">{{ analysis.sceneCount }}</span>
                       <span class="analysis-stat-key">Scenes</span>
                     </div>
                   </div>
@@ -257,11 +251,11 @@
                       </div>
                     </div>
                   }
-                  @if (analysis.scenes.length) {
+                  @if (analysis.scenePreviews.length) {
                     <div class="analysis-group">
                       <p class="analysis-group-title">Scenes Detected</p>
                       <div class="analysis-scenes">
-                        @for (scene of analysis.scenes; track $index) {
+                        @for (scene of analysis.scenePreviews; track $index) {
                           <div class="scene-preview">
                             <div class="scene-preview-head">
                               <span class="scene-type-badge">{{ scene.type }}</span>
@@ -314,14 +308,16 @@
                         class="lang-tab"
                         role="tab"
                         [class.lang-tab--active]="activeLanguage() === langMeta.targetLanguage"
-                        [class.lang-tab--loading]="langMeta.translationStatus === 'TRANSLATING'"
+                        [class.lang-tab--loading]="langMeta.status === 'TRANSLATING'"
                         [attr.aria-selected]="activeLanguage() === langMeta.targetLanguage"
                         (click)="selectLanguageTab(langMeta.targetLanguage)"
                         [title]="languageLabel(langMeta.targetLanguage)"
                       >
                         <span class="lang-tab-code">{{ langMeta.targetLanguage | uppercase }}</span>
-                        @if (langMeta.translationStatus === 'TRANSLATING') {
+                        @if (langMeta.status === 'TRANSLATING') {
                           <i class="pi pi-spin pi-spinner lang-tab-spinner"></i>
+                        } @else if (langMeta.status === 'FAILED') {
+                          <i class="pi pi-exclamation-circle lang-tab-error"></i>
                         } @else if (langMeta.userAccepted === true) {
                           <i class="pi pi-check-circle lang-tab-check"></i>
                         } @else if (langMeta.userAccepted === false) {
@@ -399,8 +395,16 @@
                     } @else {
                       <textarea class="cw-edit-textarea" [ngModel]="editText()" (ngModelChange)="editText.set($event)" placeholder="Edit the translation…" spellcheck="true" [attr.dir]="activeIsRtl() ? 'rtl' : null"></textarea>
                     }
-                  } @else if (existingLanguages().some(l => l.targetLanguage === activeLanguage() && l.translationStatus === 'TRANSLATING')) {
+                  } @else if (existingLanguages().some(l => l.targetLanguage === activeLanguage() && l.status === 'TRANSLATING')) {
                     <div class="stage-empty"><app-ssp-loader size="sm" label="Translating…" /></div>
+                  } @else if (existingLanguages().some(l => l.targetLanguage === activeLanguage() && l.status === 'FAILED')) {
+                    <div class="stage-empty">
+                      <i class="pi pi-exclamation-triangle stage-empty-icon stage-empty-icon--error"></i>
+                      <p class="cw-inline-error">Translation failed.</p>
+                      <button class="cw-run-btn cw-run-btn--sm" [disabled]="translationLoading()" (click)="triggerTranslation()">
+                        <i class="pi pi-refresh"></i> Retry
+                      </button>
+                    </div>
                   } @else {
                     <div class="stage-empty">
                       <i class="pi pi-language stage-empty-icon"></i>

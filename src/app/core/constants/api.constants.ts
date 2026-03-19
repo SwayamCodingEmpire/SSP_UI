@@ -4,7 +4,7 @@
 // ============================================================
 
 export const BASE_URL = 'http://localhost:8080';
-const API = `${BASE_URL}/api`;
+const API = `${BASE_URL}/api/v2`;
 
 export const API_ENDPOINTS = {
   // ── Projects ────────────────────────────────────────────
@@ -18,12 +18,11 @@ export const API_ENDPOINTS = {
 
   // ── Chapters ────────────────────────────────────────────
   chapters: {
-    listByProject:         (projectId: number) => `${API}/projects/${projectId}/chapters`,
-    translationsByLanguage:(projectId: number) => `${API}/projects/${projectId}/chapters/translations`,
-    upload:                `${API}/chapters/upload`,
-    processJson:           `${API}/chapters/process`,
-    processText:           `${API}/chapters/process-text`,
-    get:                   (chapterId: number) => `${API}/chapters/${chapterId}`,
+    listByProject: (projectId: number) => `${API}/projects/${projectId}/chapters`,
+    upload:        `${API}/chapters/upload`,
+    processJson:   `${API}/chapters`,
+    processText:   `${API}/chapters/text`,
+    get:           (chapterId: number) => `${API}/chapters/${chapterId}`,
   },
 
   // ── Translation ─────────────────────────────────────────

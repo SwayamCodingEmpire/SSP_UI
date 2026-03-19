@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { API_ENDPOINTS } from '../constants/api.constants';
 import {
-  ChapterProcessingResponse,
-  ChapterLanguageProgress,
+  ChapterSummary,
+  IngestChapterResponse,
   SubmitChapterJsonRequest,
 } from '../models/chapter.model';
 
@@ -12,21 +12,13 @@ export class ChapterService {
   private http = inject(HttpClient);
 
   getByProject(projectId: number) {
-    return this.http.get<ChapterProcessingResponse[]>(
+    return this.http.get<ChapterSummary[]>(
       API_ENDPOINTS.chapters.listByProject(projectId),
     );
   }
 
-  /** §7 — per-chapter translation progress for one language */
-  getTranslationsByLanguage(projectId: number, targetLanguage: string) {
-    const params = new HttpParams().set('targetLanguage', targetLanguage);
-    return this.http.get<ChapterLanguageProgress[]>(
-      API_ENDPOINTS.chapters.translationsByLanguage(projectId), { params },
-    );
-  }
-
   getById(chapterId: number) {
-    return this.http.get<ChapterProcessingResponse>(
+    return this.http.get<IngestChapterResponse>(
       API_ENDPOINTS.chapters.get(chapterId),
     );
   }
@@ -37,11 +29,11 @@ export class ChapterService {
     form.append('projectId', String(projectId));
     form.append('chapterNumber', String(chapterNumber));
     if (title) form.append('title', title);
-    return this.http.post<ChapterProcessingResponse>(API_ENDPOINTS.chapters.upload, form);
+    return this.http.post<IngestChapterResponse>(API_ENDPOINTS.chapters.upload, form);
   }
 
   submitJson(data: SubmitChapterJsonRequest) {
-    return this.http.post<ChapterProcessingResponse>(
+    return this.http.post<IngestChapterResponse>(
       API_ENDPOINTS.chapters.processJson, data,
     );
   }
@@ -57,7 +49,7 @@ export class ChapterService {
       .set('chapterNumber', String(chapterNumber));
     if (title) params = params.set('title', title);
 
-    return this.http.post<ChapterProcessingResponse>(
+    return this.http.post<IngestChapterResponse>(
       API_ENDPOINTS.chapters.processText,
       text,
       { params, headers: { 'Content-Type': 'text/plain' } },

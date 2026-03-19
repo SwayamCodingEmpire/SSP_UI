@@ -6,7 +6,8 @@ import {
   TranslationSaveRequest,
   TranslationStatusResponse,
   ChapterTranslationResponse,
-  ChapterLanguagesResponse,
+  ReviewResult,
+  AvailableTranslation,
 } from '../models/translation.model';
 import { PollingService } from './polling.service';
 
@@ -38,18 +39,19 @@ export class TranslationService {
   }
 
   save(chapterId: number, body: TranslationSaveRequest) {
-    return this.http.put<ChapterTranslationResponse>(
+    return this.http.put<ReviewResult>(
       API_ENDPOINTS.translation.save(chapterId), body
     );
   }
 
+  /** Returns a flat array of available translations for a chapter */
   getLanguages(chapterId: number) {
-    return this.http.get<ChapterLanguagesResponse>(
+    return this.http.get<AvailableTranslation[]>(
       API_ENDPOINTS.translation.languages(chapterId)
     );
   }
 
-  /** Triggers translation then polls until COMPLETED or PARTIAL */
+  /** Triggers translation then polls until AI_TRANSLATED, HUMAN_REVIEWED, APPROVED, or FAILED */
   triggerAndPoll(chapterId: number, targetLanguage: string, provider?: TranslationProvider) {
     return new Promise<void>((resolve, reject) => {
       this.trigger(chapterId, targetLanguage, provider).subscribe({
@@ -59,7 +61,7 @@ export class TranslationService {
     }).then(() =>
       this.polling.poll(
         () => this.getStatus(chapterId, targetLanguage),
-        s => s.status === 'COMPLETED' || s.status === 'PARTIAL' || s.status === 'AI_TRANSLATED',
+        s => s.status === 'AI_TRANSLATED' || s.status === 'HUMAN_REVIEWED' || s.status === 'APPROVED' || s.status === 'FAILED',
       )
     );
   }
