@@ -165,7 +165,7 @@
                       <app-async-pulse [active]="analysisLoading()" variant="amber" />
                     </div>
                     @if (analysisResult()) {
-                      <span class="stage-summary">{{ analysisResult()!.characterCount }} chars &middot; {{ analysisResult()!.sceneCount }} scenes</span>
+                      <span class="stage-summary">{{ analysisResult()!.charactersFound }} chars &middot; {{ analysisResult()!.scenesDetected }} scenes</span>
                     }
                   </div>
                 }
@@ -217,8 +217,8 @@
             <!-- ── SOURCE body ─────────────────────────── -->
             @if (panelId === 'source') {
               <div class="stage-body stage-body--source">
-                @if (chapter.originalTextPreview) {
-                  <p class="cw-text">{{ chapter.originalTextPreview }}</p>
+                @if (chapter.originalText || chapter.originalTextPreview) {
+                  <p class="cw-text">{{ chapter.originalText || chapter.originalTextPreview }}</p>
                 } @else {
                   <p class="cw-muted">Source text not yet available.</p>
                 }
@@ -233,11 +233,11 @@
                 } @else if (analysisResult(); as analysis) {
                   <div class="analysis-stats">
                     <div class="analysis-stat">
-                      <span class="analysis-stat-val">{{ analysis.characterCount }}</span>
+                      <span class="analysis-stat-val">{{ analysis.charactersFound }}</span>
                       <span class="analysis-stat-key">Characters</span>
                     </div>
                     <div class="analysis-stat">
-                      <span class="analysis-stat-val">{{ analysis.sceneCount }}</span>
+                      <span class="analysis-stat-val">{{ analysis.scenesDetected }}</span>
                       <span class="analysis-stat-key">Scenes</span>
                     </div>
                   </div>
@@ -251,11 +251,11 @@
                       </div>
                     </div>
                   }
-                  @if (analysis.scenePreviews.length) {
+                  @if (analysis.scenes.length) {
                     <div class="analysis-group">
                       <p class="analysis-group-title">Scenes Detected</p>
                       <div class="analysis-scenes">
-                        @for (scene of analysis.scenePreviews; track $index) {
+                        @for (scene of analysis.scenes; track $index) {
                           <div class="scene-preview">
                             <div class="scene-preview-head">
                               <span class="scene-type-badge">{{ scene.type }}</span>

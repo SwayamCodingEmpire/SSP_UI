@@ -216,7 +216,7 @@ export class ChapterWorkspace {
 
       if (!this.analysisInitDone) {
         this.analysisInitDone = true;
-        void this.loadAnalysisStatus(chapter.status === 'PARSED');
+        void this.loadAnalysisStatus(chapter.status === 'PARSED' || chapter.status === 'PROCESSED');
       }
 
       if (!this.translationInitDone) {

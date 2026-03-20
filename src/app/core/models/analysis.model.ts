@@ -10,8 +10,8 @@ export interface AnalysisScenePreview {
 export interface AnalysisResult {
   chapterId: number;
   status: AnalysisStatus;
-  characterCount: number;
-  sceneCount: number;
+  charactersFound: number;
+  scenesDetected: number;
   characterNames: string[];
-  scenePreviews: AnalysisScenePreview[];
+  scenes: AnalysisScenePreview[];
 }

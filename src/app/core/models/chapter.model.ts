@@ -24,6 +24,7 @@ export interface IngestChapterResponse {
   status: ChapterStatus;
   analysisStatus: string;
   originalTextPreview: string;
+  originalText?: string;
 }
 
 export interface SubmitChapterJsonRequest {
